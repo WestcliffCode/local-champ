@@ -1,4 +1,4 @@
-import * as migration_20260430_035717 from './20260430_035717.js';
+import * as migration_20260430_035717 from './20260430_035717';
 
 export const migrations = [
   {

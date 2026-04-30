@@ -6,9 +6,9 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { buildConfig } from 'payload';
 import sharp from 'sharp';
 
-import { Businesses } from './collections/Businesses.js';
-import { Coupons } from './collections/Coupons.js';
-import { Users } from './collections/Users.js';
+import { Businesses } from './collections/Businesses';
+import { Coupons } from './collections/Coupons';
+import { Users } from './collections/Users';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
