@@ -44,6 +44,11 @@ ON CONFLICT ("slug") DO NOTHING;
 -- =============================================================================
 -- coupons (joined back to businesses by slug)
 -- =============================================================================
+-- Coupons table has no unique constraint on (business_id, title), so a generic
+-- `ON CONFLICT DO NOTHING` would only guard against PK collision (which can't
+-- happen with gen_random_uuid()) and reruns would duplicate rows. Use
+-- `WHERE NOT EXISTS` instead — skip rows where the (business, title) pair is
+-- already seeded.
 INSERT INTO "coupons" ("business_id", "title", "description", "discount_value", "terms", "is_active")
 SELECT b."id", c."title", c."description", c."discount_value", c."terms", c."is_active"
 FROM (VALUES
@@ -73,4 +78,9 @@ FROM (VALUES
   ('battery-park-reading-co',    'Children''s book sale',          NULL,                                                     '20% off children''s books','Excludes special-order.',                            true)
 ) AS c("business_slug", "title", "description", "discount_value", "terms", "is_active")
 JOIN "businesses" b ON b."slug" = c."business_slug"
-ON CONFLICT DO NOTHING;
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM "coupons" existing
+  WHERE existing."business_id" = b."id"
+    AND existing."title" = c."title"
+);

@@ -91,13 +91,19 @@ export const businesses = pgTable(
       .notNull()
       .defaultNow(),
   },
+  // Index names mirror Payload's canonical migration
+  // (apps/web/migrations/20260430_035717.{ts,json}). Don't rename them — drift
+  // would force Drizzle to emit DROP/CREATE Index on every diff.
   (t) => [
-    uniqueIndex('businesses_slug_unique_idx').on(t.slug),
-    uniqueIndex('businesses_google_place_id_unique_idx').on(t.googlePlaceId),
+    index('businesses_name_idx').on(t.name),
+    uniqueIndex('businesses_slug_idx').on(t.slug),
     index('businesses_city_slug_idx').on(t.citySlug),
     index('businesses_category_slug_idx').on(t.categorySlug),
     index('businesses_status_idx').on(t.status),
+    uniqueIndex('businesses_google_place_id_idx').on(t.googlePlaceId),
     index('businesses_cps_score_idx').on(t.cpsScore),
+    index('businesses_updated_at_idx').on(t.updatedAt),
+    index('businesses_created_at_idx').on(t.createdAt),
   ],
 );
 
@@ -124,8 +130,11 @@ export const coupons = pgTable(
       .notNull()
       .defaultNow(),
   },
+  // Index names mirror Payload's canonical migration. Same rule as businesses above.
   (t) => [
-    index('coupons_business_id_idx').on(t.businessId),
+    index('coupons_business_idx').on(t.businessId),
     index('coupons_is_active_idx').on(t.isActive),
+    index('coupons_updated_at_idx').on(t.updatedAt),
+    index('coupons_created_at_idx').on(t.createdAt),
   ],
 );

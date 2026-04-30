@@ -36,9 +36,16 @@ CREATE INDEX IF NOT EXISTS "cities_sort_order_idx" ON "cities" USING btree ("sor
 -- RLS: public select; writes via service role
 ALTER TABLE "cities" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "cities_select_all" ON "cities"
-  FOR SELECT
-  USING (true);
+-- Wrap CREATE POLICY in a PL/pgSQL block so the migration is idempotent
+-- (Postgres has no `CREATE POLICY IF NOT EXISTS` form). Re-running this
+-- migration after the policy already exists is a no-op instead of an error.
+DO $$ BEGIN
+  CREATE POLICY "cities_select_all" ON "cities"
+    FOR SELECT
+    USING (true);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 -- =============================================================================
 -- businesses.search_tsv (generated column for FTS)
