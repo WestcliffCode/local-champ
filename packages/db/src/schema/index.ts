@@ -1,10 +1,12 @@
 /**
  * Drizzle schema entry point.
  *
- * Phase 1 will populate this with:
- *   - `redemptions`  (Drizzle-owned: scout_id, coupon_id, status enum, timestamps)
- *   - `sourcing`     (Drizzle-owned: buyer_id, seller_id, verified)
- *   - `scouts`       (Drizzle-owned: profile, badge_status enum)
- *   - introspected `businesses` and `coupons` types from Payload-owned tables
+ * Schema ownership (per architectural decision in Phase 0):
+ *   - Drizzle owns: `scouts`, `redemptions`, `sourcing`, `reviews`
+ *   - Payload owns: `businesses`, `coupons` — introspected types added in Phase 1.B
  */
-export {};
+export * from './enums';
+export * from './scouts';
+export * from './redemptions';
+export * from './sourcing';
+export * from './reviews';
