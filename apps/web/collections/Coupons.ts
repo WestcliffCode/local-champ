@@ -14,9 +14,15 @@ export const Coupons: CollectionConfig = {
   access: {
     // Public read — coupons render on business detail pages.
     read: () => true,
-    // Merchants can create coupons (constrained to their own business by hook below).
-    // Admins can create any.
-    create: ({ req: { user } }) => Boolean(user),
+    // Admins can create any. Merchants must have a business linked, otherwise
+    // the beforeChange hook can't pin `business` and we'd accept whatever the
+    // client sent — a tenancy escape. Block at the access layer.
+    create: ({ req: { user } }) => {
+      if (!user) return false;
+      const u = user as { role?: string; business?: string };
+      if (u.role === 'admin') return true;
+      return Boolean(u.business);
+    },
     update: ({ req: { user } }) => {
       if (!user) return false;
       const u = user as { role?: string; business?: string };

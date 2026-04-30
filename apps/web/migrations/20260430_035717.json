@@ -80,7 +80,7 @@
         },
         "location": {
           "name": "location",
-          "type": "geometry(Point)",
+          "type": "geometry(Point, 4326)",
           "primaryKey": false,
           "notNull": false
         },

@@ -16,7 +16,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"address_city" varchar,
   	"address_state" varchar,
   	"address_postal_code" varchar,
-  	"location" geometry(Point),
+  	"location" geometry(Point, 4326),
   	"phone" varchar,
   	"google_place_id" varchar,
   	"star_rating" numeric,

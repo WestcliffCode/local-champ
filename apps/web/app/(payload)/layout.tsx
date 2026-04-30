@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import config from '@payload-config';
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts';
 import type { ServerFunctionClient } from 'payload';

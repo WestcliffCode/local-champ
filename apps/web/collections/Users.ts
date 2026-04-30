@@ -59,6 +59,18 @@ export const Users: CollectionConfig = {
       name: 'business',
       type: 'relationship',
       relationTo: 'businesses',
+      // Server-side enforcement of the tenancy invariant: merchants MUST have
+      // a linked business; admins MAY have one but don't need to.
+      validate: (
+        value: unknown,
+        args: { siblingData?: { role?: string } | null } | undefined,
+      ) => {
+        const role = args?.siblingData?.role;
+        if (role === 'merchant' && !value) {
+          return 'A merchant account must be linked to a business.';
+        }
+        return true;
+      },
       admin: {
         description: 'Required for merchants; leave empty for admins.',
       },

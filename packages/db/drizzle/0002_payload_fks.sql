@@ -39,12 +39,6 @@ ALTER TABLE "reviews"
   FOREIGN KEY ("business_id") REFERENCES "public"."businesses"("id")
   ON DELETE CASCADE ON UPDATE NO ACTION;
 
--- Enforce SRID 4326 (WGS84 lat/lng) on businesses.location.
---
--- Payload's drizzle helper (geometryColumn.js in @payloadcms/drizzle) writes
--- inserts as `SRID=4326;point(lng lat)` already, so this constraint matches
--- runtime behavior and prevents silent insertion of points in other coordinate
--- systems. Without the constraint, the column accepts any SRID, which would
--- corrupt geofencing math downstream.
-ALTER TABLE "businesses"
-  ALTER COLUMN "location" TYPE geometry(Point, 4326);
+-- Note: businesses.location SRID enforcement (geometry(Point, 4326)) is
+-- now applied directly in the Payload migration that creates the column —
+-- see apps/web/migrations/20260430_035717.ts. No follow-up ALTER needed here.
