@@ -1,4 +1,12 @@
-import type { CollectionConfig, FieldHook } from 'payload';
+import type { CollectionAfterChangeHook, CollectionConfig, FieldHook } from 'payload';
+import { revalidateTag } from 'next/cache';
+import {
+  businessSlugTag,
+  businessTag,
+  categoryTag,
+  cityTag,
+  directoryTag,
+} from '@localchamp/logic';
 
 /**
  * Slug auto-generation: derive from `name` if not explicitly set.
@@ -14,6 +22,70 @@ const slugifyFromName: FieldHook = ({ value, data }) => {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+};
+
+/**
+ * Trigger Next.js ISR invalidation when a business is created or updated.
+ *
+ * Tag granularity:
+ *   - business:{id}                  always
+ *   - business:slug:{slug}           always (current slug)
+ *   - category:{city}:{category}     always (current combo)
+ *   - city:{city}                    always
+ *   - directory                      always (broadest — marketing home)
+ *
+ * If the slug, city_slug, or category_slug changed, ALSO invalidate the old
+ * tag values so the previous URL surfaces the updated row (or 404s, depending
+ * on what the new state implies).
+ *
+ * Failures are swallowed: this hook runs after the database write has already
+ * succeeded, so we never want to fail the merchant's edit because cache
+ * invalidation hit a transient error. Errors are logged for diagnosability.
+ */
+const revalidateBusinessTags: CollectionAfterChangeHook = async ({
+  doc,
+  previousDoc,
+  operation,
+}) => {
+  if (operation !== 'create' && operation !== 'update') return doc;
+
+  const tags = new Set<string>();
+  tags.add(directoryTag());
+  tags.add(businessTag(doc.id));
+  tags.add(businessSlugTag(doc.slug));
+  tags.add(cityTag(doc.city_slug));
+  tags.add(categoryTag(doc.city_slug, doc.category_slug));
+
+  // If slug-bearing fields shifted, invalidate the OLD tag combinations too.
+  if (previousDoc && operation === 'update') {
+    if (previousDoc.slug && previousDoc.slug !== doc.slug) {
+      tags.add(businessSlugTag(previousDoc.slug));
+    }
+    if (previousDoc.city_slug && previousDoc.city_slug !== doc.city_slug) {
+      tags.add(cityTag(previousDoc.city_slug));
+    }
+    if (
+      previousDoc.city_slug &&
+      previousDoc.category_slug &&
+      (previousDoc.city_slug !== doc.city_slug ||
+        previousDoc.category_slug !== doc.category_slug)
+    ) {
+      tags.add(categoryTag(previousDoc.city_slug, previousDoc.category_slug));
+    }
+  }
+
+  await Promise.all(
+    Array.from(tags).map(async (tag) => {
+      try {
+        await revalidateTag(tag);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(`[Businesses.afterChange] revalidateTag('${tag}') failed`, err);
+      }
+    }),
+  );
+
+  return doc;
 };
 
 export const Businesses: CollectionConfig = {
@@ -47,7 +119,7 @@ export const Businesses: CollectionConfig = {
   },
   hooks: {
     afterChange: [
-      // Phase 2: trigger Next.js ISR via revalidateTag('business:{id}')
+      revalidateBusinessTags,
       // Phase 5: also recompute cps_score from community activity blocks
     ],
   },

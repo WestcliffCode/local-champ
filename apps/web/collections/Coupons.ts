@@ -1,4 +1,53 @@
-import type { CollectionConfig } from 'payload';
+import type { CollectionAfterChangeHook, CollectionConfig } from 'payload';
+import { revalidateTag } from 'next/cache';
+import { businessTag, directoryTag } from '@localchamp/logic';
+
+/**
+ * Trigger Next.js ISR invalidation when a coupon is created or updated.
+ *
+ * Coupons render on the parent business's detail page, so we invalidate
+ * `business:{id}` for the parent. We also bust `directory` so the marketing
+ * home (which counts active coupons in future iterations) stays fresh.
+ *
+ * The `business` field on a coupon is a relationship — Payload returns it
+ * as either a string ID (depth 0) or a populated object (depth >= 1).
+ * Handle both shapes defensively.
+ *
+ * Failures are swallowed but logged: cache misses are recoverable; failing
+ * the merchant's edit on a transient cache error is not.
+ */
+const revalidateCouponTags: CollectionAfterChangeHook = async ({
+  doc,
+  operation,
+}) => {
+  if (operation !== 'create' && operation !== 'update') return doc;
+
+  const businessRef = doc.business as
+    | string
+    | { id?: string }
+    | null
+    | undefined;
+  const businessId =
+    typeof businessRef === 'string'
+      ? businessRef
+      : (businessRef?.id ?? null);
+
+  const tags = [directoryTag()];
+  if (businessId) tags.push(businessTag(businessId));
+
+  await Promise.all(
+    tags.map(async (tag) => {
+      try {
+        await revalidateTag(tag);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(`[Coupons.afterChange] revalidateTag('${tag}') failed`, err);
+      }
+    }),
+  );
+
+  return doc;
+};
 
 export const Coupons: CollectionConfig = {
   slug: 'coupons',
@@ -54,6 +103,7 @@ export const Coupons: CollectionConfig = {
         return data;
       },
     ],
+    afterChange: [revalidateCouponTags],
   },
   fields: [
     {
