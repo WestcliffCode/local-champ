@@ -2,9 +2,8 @@ import { withPayload } from '@payloadcms/next/withPayload';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  experimental: {
-    typedRoutes: true,
-  },
+  // Promoted out of experimental in Next.js 16.
+  typedRoutes: true,
   // Workspace packages need transpilation in Next.js
   transpilePackages: [
     '@localchamp/ui',
