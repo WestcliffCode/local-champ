@@ -77,7 +77,12 @@ const revalidateBusinessTags: CollectionAfterChangeHook = async ({
   await Promise.all(
     Array.from(tags).map(async (tag) => {
       try {
-        await revalidateTag(tag);
+        // Next 16 changed `revalidateTag` to require a 2nd `profile` argument.
+        // `'max'` is the longest cache life profile and mirrors v15 behavior:
+        // the tag is marked stale and the next request triggers
+        // stale-while-revalidate. See:
+        // https://nextjs.org/docs/app/api-reference/functions/revalidateTag
+        await revalidateTag(tag, 'max');
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error(`[Businesses.afterChange] revalidateTag('${tag}') failed`, err);
