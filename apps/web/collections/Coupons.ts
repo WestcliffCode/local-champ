@@ -3,40 +3,59 @@ import { revalidateTag } from 'next/cache';
 import { businessTag, directoryTag } from '@localchamp/logic';
 
 /**
+ * Resolve a Payload `relationship` field value to its underlying ID.
+ *
+ * The field returns either a string ID (depth 0) or a populated object
+ * (depth >= 1, shape `{ id, ... }`). Returns null for missing/malformed input.
+ */
+function extractBusinessId(
+  value: string | { id?: string } | null | undefined,
+): string | null {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && typeof value.id === 'string') {
+    return value.id;
+  }
+  return null;
+}
+
+/**
  * Trigger Next.js ISR invalidation when a coupon is created or updated.
  *
  * Coupons render on the parent business's detail page, so we invalidate
  * `business:{id}` for the parent. We also bust `directory` so the marketing
  * home (which counts active coupons in future iterations) stays fresh.
  *
- * The `business` field on a coupon is a relationship — Payload returns it
- * as either a string ID (depth 0) or a populated object (depth >= 1).
- * Handle both shapes defensively.
+ * Reassignment safety: when an admin moves a coupon to a different business
+ * (operation = 'update' AND `previousDoc.business !== doc.business`), we
+ * invalidate BOTH the old AND new business tags. Without this, the old
+ * business's detail page would keep displaying the now-moved coupon until
+ * the next time someone edits the business itself.
  *
  * Failures are swallowed but logged: cache misses are recoverable; failing
  * the merchant's edit on a transient cache error is not.
  */
 const revalidateCouponTags: CollectionAfterChangeHook = async ({
   doc,
+  previousDoc,
   operation,
 }) => {
   if (operation !== 'create' && operation !== 'update') return doc;
 
-  const businessRef = doc.business as
-    | string
-    | { id?: string }
-    | null
-    | undefined;
-  const businessId =
-    typeof businessRef === 'string'
-      ? businessRef
-      : (businessRef?.id ?? null);
+  const tags = new Set<string>();
+  tags.add(directoryTag());
 
-  const tags = [directoryTag()];
-  if (businessId) tags.push(businessTag(businessId));
+  const newBusinessId = extractBusinessId(doc.business);
+  if (newBusinessId) tags.add(businessTag(newBusinessId));
+
+  if (previousDoc && operation === 'update') {
+    const prevBusinessId = extractBusinessId(previousDoc.business);
+    if (prevBusinessId && prevBusinessId !== newBusinessId) {
+      tags.add(businessTag(prevBusinessId));
+    }
+  }
 
   await Promise.all(
-    tags.map(async (tag) => {
+    Array.from(tags).map(async (tag) => {
       try {
         await revalidateTag(tag);
       } catch (err) {
@@ -134,12 +153,7 @@ export const Coupons: CollectionConfig = {
         description: 'Free-form display text — e.g. "20% off", "$5 off lunch", "Free dessert".',
       },
     },
+    { name: 'is_active', type: 'checkbox', defaultValue: true, index: true },
     { name: 'terms', type: 'textarea' },
-    {
-      name: 'is_active',
-      type: 'checkbox',
-      defaultValue: true,
-      index: true,
-    },
   ],
-};
+}

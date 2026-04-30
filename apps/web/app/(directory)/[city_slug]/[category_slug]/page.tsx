@@ -3,7 +3,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { BreadcrumbTrail, BusinessCard, DirectoryHero } from '@localchamp/ui';
-import { breadcrumbJsonLd, itemListJsonLd } from '@localchamp/logic';
+import {
+  breadcrumbJsonLd,
+  itemListJsonLd,
+  stringifyJsonLd,
+  titleizeSlug,
+} from '@localchamp/logic';
 
 import {
   getBusinessesByCategory,
@@ -24,6 +29,11 @@ interface PageProps {
 export async function generateStaticParams() {
   // Build the full city × category cross-product so every seeded combo
   // prebuilds. With 2 cities and 3 categories at MVP that's 6 pages — cheap.
+  // `getCategoriesForCity` only returns categories that have ≥ 1 business,
+  // so we never prebuild an empty listing — the `notFound()` below is for
+  // the URL-typed-by-hand case (Cubic/CodeRabbit asked about replacing the
+  // 404 with an empty state; rejected because thin-content listings hurt
+  // SEO and crawler signals more than a clean 404).
   const allCities = await getCities();
   const out: Array<{ city_slug: string; category_slug: string }> = [];
   for (const c of allCities) {
@@ -35,19 +45,13 @@ export async function generateStaticParams() {
   return out;
 }
 
-function titleizeCategory(slug: string): string {
-  // Categories are single-word slugs at MVP (coffee, florist, bookstore).
-  // Capitalize the first letter, leave hyphens/underscores intact for future.
-  return slug.charAt(0).toUpperCase() + slug.slice(1);
-}
-
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { city_slug, category_slug } = await params;
   const city = await getCityBySlug(city_slug);
   if (!city) return { title: 'Not found' };
-  const category = titleizeCategory(category_slug);
+  const category = titleizeSlug(category_slug);
   return {
     title: `Best ${category.toLowerCase()} in ${city.displayName}`,
     description: `Top-rated ${category.toLowerCase()} spots in ${city.displayName}, ${city.state} — ranked by community participation and verified by scouts.`,
@@ -64,9 +68,10 @@ export default async function CategoryPage({ params }: PageProps) {
   if (!city) notFound();
 
   const businesses = await getBusinessesByCategory(city_slug, category_slug);
+  // Empty categories 404 by design — see generateStaticParams comment above.
   if (businesses.length === 0) notFound();
 
-  const category = titleizeCategory(category_slug);
+  const category = titleizeSlug(category_slug);
   const pageUrl = `${SITE_URL}/${city.slug}/${category_slug}`;
 
   const breadcrumb = breadcrumbJsonLd([
@@ -89,12 +94,12 @@ export default async function CategoryPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+        dangerouslySetInnerHTML={{ __html: stringifyJsonLd(breadcrumb) }}
       />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }}
+        dangerouslySetInnerHTML={{ __html: stringifyJsonLd(itemList) }}
       />
 
       <DirectoryHero

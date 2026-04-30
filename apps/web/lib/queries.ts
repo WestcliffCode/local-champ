@@ -17,19 +17,27 @@
  * Numeric column quirk: postgres-js returns `numeric` columns as strings to
  * preserve arbitrary precision. We convert to JS `number` at this boundary
  * so route components can assume number types throughout.
+ *
+ * Drizzle helpers (`and`, `eq`, `sql`, etc.) come from `@localchamp/db` rather
+ * than `drizzle-orm` directly — that package re-exports the helpers so apps/web
+ * doesn't need a direct `drizzle-orm` dependency. Keeps the ORM choice owned
+ * by the db package.
  */
 
 import { unstable_cache } from 'next/cache';
-import { and, asc, desc, eq, sql } from 'drizzle-orm';
-import { db } from '@localchamp/db';
-import { businesses, cities, coupons, sourcing } from '@localchamp/db/schema';
+import { and, asc, db, desc, eq, schema, sql } from '@localchamp/db';
 import {
   businessSlugTag,
   businessTag,
   categoryTag,
   cityTag,
   directoryTag,
+  titleizeSlug,
 } from '@localchamp/logic';
+
+// `schema` is the namespace re-export from @localchamp/db. Aliasing the
+// individual tables here keeps the rest of the file idiomatic.
+const { businesses, cities, coupons, sourcing } = schema;
 
 // =====================================================================
 // Returned shapes (consumed by route components)
@@ -48,6 +56,8 @@ export type CityRow = {
 export type CategorySummary = {
   /** category_slug (also the URL segment) */
   slug: string;
+  /** human-friendly display name (e.g. "Pet Supplies" for `pet-supplies`) */
+  displayName: string;
   /** count of businesses in this city + category */
   businessCount: number;
 };
@@ -200,26 +210,34 @@ function shapeBusinessRow(row: RawBusinessRow): DirectoryBusinessRow {
 // Cached fetchers
 // =====================================================================
 
-/** All cities, featured-first, then by sort_order, then alpha. */
-export const getCities = unstable_cache(
-  async (): Promise<CityRow[]> => {
-    const rows = await db
-      .select({
-        slug: cities.slug,
-        displayName: cities.displayName,
-        state: cities.state,
-        region: cities.region,
-        heroImageUrl: cities.heroImageUrl,
-        featured: cities.featured,
-        sortOrder: cities.sortOrder,
-      })
-      .from(cities)
-      .orderBy(desc(cities.featured), asc(cities.sortOrder), asc(cities.displayName));
-    return rows;
-  },
-  ['directory', 'getCities'],
-  { tags: [directoryTag()], revalidate: 3600 },
-);
+/**
+ * All cities, featured-first, then by sort_order, then alpha.
+ *
+ * Wrapped in an async function (rather than a top-level `unstable_cache`
+ * binding) so this fetcher follows the same pattern as the parameterized
+ * fetchers below — uniform style, easier to add params later.
+ */
+export async function getCities(): Promise<CityRow[]> {
+  return unstable_cache(
+    async (): Promise<CityRow[]> => {
+      const rows = await db
+        .select({
+          slug: cities.slug,
+          displayName: cities.displayName,
+          state: cities.state,
+          region: cities.region,
+          heroImageUrl: cities.heroImageUrl,
+          featured: cities.featured,
+          sortOrder: cities.sortOrder,
+        })
+        .from(cities)
+        .orderBy(desc(cities.featured), asc(cities.sortOrder), asc(cities.displayName));
+      return rows;
+    },
+    ['directory', 'getCities'],
+    { tags: [directoryTag()], revalidate: 3600 },
+  )();
+}
 
 /** Single city by slug; null if not found. */
 export async function getCityBySlug(slug: string): Promise<CityRow | null> {
@@ -247,7 +265,8 @@ export async function getCityBySlug(slug: string): Promise<CityRow | null> {
 
 /**
  * Distinct `category_slug`s present in this city, with a count of businesses
- * per category. Drives the city landing page's "Browse by category" grid.
+ * per category and a human-friendly display name (e.g. `pet-supplies` →
+ * "Pet Supplies"). Drives the city landing page's "Browse by category" grid.
  */
 export async function getCategoriesForCity(citySlug: string): Promise<CategorySummary[]> {
   return unstable_cache(
@@ -263,6 +282,7 @@ export async function getCategoriesForCity(citySlug: string): Promise<CategorySu
         .orderBy(asc(businesses.categorySlug));
       return rows.map((r) => ({
         slug: r.slug,
+        displayName: titleizeSlug(r.slug),
         businessCount: Number(r.businessCount),
       }));
     },
@@ -358,7 +378,14 @@ export async function getBusinessBySlug(
         geo: decodePostgisPoint(row.geoJson),
       };
     },
-    ['directory', 'getBusinessBySlug', businessSlug],
+    // Cache key MUST include citySlug + categorySlug, not just businessSlug.
+    // The function returns null for URL/row mismatches (defense-in-depth above);
+    // without those segments in the key, two distinct URLs like
+    // `/boulder/coffee/asheville-books-and-bindery` (mismatch → null) and
+    // `/asheville/bookstore/asheville-books-and-bindery` (the canonical URL)
+    // would collide on the same key and the second request would return the
+    // cached null. Tags still target city/category for granular invalidation.
+    ['directory', 'getBusinessBySlug', citySlug, categorySlug, businessSlug],
     {
       tags: [
         directoryTag(),

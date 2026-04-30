@@ -1,7 +1,6 @@
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { MapPin, Phone, Star, Tag } from 'lucide-react';
 
 import {
   BreadcrumbTrail,
@@ -10,10 +9,19 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  MapPin,
+  Phone,
   ScoreBadge,
   Separator,
+  Star,
+  Tag,
 } from '@localchamp/ui';
-import { breadcrumbJsonLd, localBusinessJsonLd } from '@localchamp/logic';
+import {
+  breadcrumbJsonLd,
+  localBusinessJsonLd,
+  stringifyJsonLd,
+  titleizeSlug,
+} from '@localchamp/logic';
 
 import {
   getBusinessBySlug,
@@ -95,14 +103,10 @@ export default async function BusinessDetailPage({ params }: PageProps) {
     getSourcingForBusiness(business.id),
   ]);
 
-  // Display name fallback: if the city row isn't in the DB (shouldn't happen
+  // Display name fallbacks: if the city row isn't in the DB (shouldn't happen
   // for a business whose city_slug exists, but defensive), title-case the slug.
-  const cityDisplayName =
-    city?.displayName ??
-    business.citySlug.charAt(0).toUpperCase() + business.citySlug.slice(1);
-  const categoryDisplayName =
-    business.categorySlug.charAt(0).toUpperCase() +
-    business.categorySlug.slice(1);
+  const cityDisplayName = city?.displayName ?? titleizeSlug(business.citySlug);
+  const categoryDisplayName = titleizeSlug(business.categorySlug);
 
   const businessUrl = `${SITE_URL}/${city_slug}/${category_slug}/${business_slug}`;
   const categoryUrl = `${SITE_URL}/${city_slug}/${category_slug}`;
@@ -142,12 +146,12 @@ export default async function BusinessDetailPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+        dangerouslySetInnerHTML={{ __html: stringifyJsonLd(breadcrumb) }}
       />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusiness) }}
+        dangerouslySetInnerHTML={{ __html: stringifyJsonLd(localBusiness) }}
       />
 
       <section className="mx-auto max-w-4xl px-6 py-10">
@@ -318,8 +322,9 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                     {edge.direction === 'sells_to' ? 'Sells to' : 'Buys from'}
                   </div>
                   <div className="mt-1 font-semibold">{edge.partnerName}</div>
-                  <div className="text-xs text-muted-foreground capitalize">
-                    {edge.partnerCategorySlug} · {edge.partnerCitySlug}
+                  <div className="text-xs text-muted-foreground">
+                    {titleizeSlug(edge.partnerCategorySlug)} ·{' '}
+                    {titleizeSlug(edge.partnerCitySlug)}
                   </div>
                 </Link>
               ))}

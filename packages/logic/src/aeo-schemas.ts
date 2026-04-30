@@ -11,6 +11,7 @@
  *   - `breadcrumbJsonLd`     — BreadcrumbList for every directory page.
  *   - `itemListJsonLd`       — ItemList for category listings + city featured grid.
  *   - `localBusinessJsonLd`  — LocalBusiness for the business detail page.
+ *   - `stringifyJsonLd`      — XSS-safe serializer for `dangerouslySetInnerHTML`.
  *
  * Deferred (post-MVP):
  *   - openingHours: needs an `opening_hours` field on `businesses` (TBD)
@@ -25,6 +26,33 @@ export type JsonLdValue =
   | null
   | { [key: string]: JsonLdValue }
   | JsonLdValue[];
+
+// ---------- Safe serialization ----------
+
+/**
+ * Serialize a JSON-LD object for safe injection into a `<script>` tag.
+ *
+ * Plain `JSON.stringify` is unsafe inside `dangerouslySetInnerHTML` because
+ * any string field that contains `</script>` (or HTML-comment delimiters, or
+ * the U+2028 / U+2029 separators that break some JS parsers) can break out
+ * of the script context and execute as page markup. Even our own data is
+ * a risk vector — a merchant whose business description is "Best `</script>`
+ * coffee in Boulder" would otherwise inject markup into the page.
+ *
+ * Replacements:
+ *   - `<`        → `\u003C`   (defeats `</script>`, `<!--`, `<![CDATA[`)
+ *   - `\u2028`   → `\\u2028`  (LINE SEPARATOR — invalid in JS string literals)
+ *   - `\u2029`   → `\\u2029`  (PARAGRAPH SEPARATOR — same)
+ *
+ * Output is still valid JSON and parses identically to the original on the
+ * Schema.org consumer side.
+ */
+export function stringifyJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003C')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
 
 // ---------- WebSite ----------
 

@@ -2,7 +2,7 @@ import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 
 import { CityCard } from '@localchamp/ui';
-import { websiteJsonLd } from '@localchamp/logic';
+import { stringifyJsonLd, websiteJsonLd } from '@localchamp/logic';
 
 import { getCities } from '@/lib/queries';
 
@@ -38,7 +38,7 @@ export default async function HomePage() {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        dangerouslySetInnerHTML={{ __html: stringifyJsonLd(websiteSchema) }}
       />
 
       {/* Hero */}

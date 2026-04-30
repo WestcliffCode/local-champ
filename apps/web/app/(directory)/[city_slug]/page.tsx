@@ -7,7 +7,11 @@ import {
   BusinessCard,
   DirectoryHero,
 } from '@localchamp/ui';
-import { breadcrumbJsonLd, itemListJsonLd } from '@localchamp/logic';
+import {
+  breadcrumbJsonLd,
+  itemListJsonLd,
+  stringifyJsonLd,
+} from '@localchamp/logic';
 
 import {
   getCategoriesForCity,
@@ -74,13 +78,13 @@ export default async function CityPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+        dangerouslySetInnerHTML={{ __html: stringifyJsonLd(breadcrumb) }}
       />
       {featured.length > 0 && (
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(featuredList) }}
+          dangerouslySetInnerHTML={{ __html: stringifyJsonLd(featuredList) }}
         />
       )}
 
@@ -120,9 +124,7 @@ export default async function CityPage({ params }: PageProps) {
                   href={`/${city.slug}/${cat.slug}` as Route}
                   className="block rounded-lg border border-border bg-background p-6 shadow-sm transition-all hover:shadow-md hover:border-foreground/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  <div className="text-lg font-semibold capitalize">
-                    {cat.slug}
-                  </div>
+                  <div className="text-lg font-semibold">{cat.displayName}</div>
                   <div className="mt-1 text-sm text-muted-foreground">
                     {cat.businessCount}{' '}
                     {cat.businessCount === 1 ? 'business' : 'businesses'}
