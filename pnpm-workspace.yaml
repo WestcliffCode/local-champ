@@ -33,5 +33,13 @@ catalog:
   "@tanstack/react-query": ^5.59.0
   zod: ^3.23.0
 
+  # Payload CMS
+  payload: ^3.0.0
+  "@payloadcms/db-postgres": ^3.0.0
+  "@payloadcms/next": ^3.0.0
+  "@payloadcms/richtext-lexical": ^3.0.0
+  "@payloadcms/ui": ^3.0.0
+  sharp: ^0.34.5
+
   # Linting
   eslint-config-next: ^16.0.0

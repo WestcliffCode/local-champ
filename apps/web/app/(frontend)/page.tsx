@@ -13,7 +13,11 @@ export default function HomePage() {
           worth living in.
         </p>
         <p className="mt-12 text-sm text-charcoal/60">
-          Phase 0 scaffold — directory routes arrive in Phase 2.
+          Phase 1 · Payload CMS wired at{' '}
+          <a className="underline underline-offset-2" href="/admin">
+            /admin
+          </a>
+          . Directory routes arrive in Phase 2.
         </p>
       </div>
     </main>
