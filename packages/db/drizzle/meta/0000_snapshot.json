@@ -1,0 +1,118 @@
+{
+  "id": "cf62a0ec-6a0f-4f39-a144-38922a48140f",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.scouts": {
+      "name": "scouts",
+      "schema": "",
+      "columns": {
+        "id": { "name": "id", "type": "uuid", "primaryKey": true, "notNull": true, "default": "gen_random_uuid()" },
+        "auth_user_id": { "name": "auth_user_id", "type": "uuid", "primaryKey": false, "notNull": true },
+        "email": { "name": "email", "type": "text", "primaryKey": false, "notNull": true },
+        "full_name": { "name": "full_name", "type": "text", "primaryKey": false, "notNull": false },
+        "badge_status": { "name": "badge_status", "type": "scout_badge", "typeSchema": "public", "primaryKey": false, "notNull": true, "default": "'none'" },
+        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true, "default": "now()" },
+        "updated_at": { "name": "updated_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true, "default": "now()" }
+      },
+      "indexes": {
+        "scouts_badge_idx": { "name": "scouts_badge_idx", "columns": [{ "expression": "badge_status", "isExpression": false, "asc": true, "nulls": "last" }], "isUnique": false, "concurrently": false, "method": "btree", "with": {} }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "scouts_auth_user_id_unique": { "name": "scouts_auth_user_id_unique", "nullsNotDistinct": false, "columns": ["auth_user_id"] },
+        "scouts_email_unique": { "name": "scouts_email_unique", "nullsNotDistinct": false, "columns": ["email"] }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.redemptions": {
+      "name": "redemptions",
+      "schema": "",
+      "columns": {
+        "id": { "name": "id", "type": "uuid", "primaryKey": true, "notNull": true, "default": "gen_random_uuid()" },
+        "scout_id": { "name": "scout_id", "type": "uuid", "primaryKey": false, "notNull": true },
+        "coupon_id": { "name": "coupon_id", "type": "uuid", "primaryKey": false, "notNull": true },
+        "status": { "name": "status", "type": "redemption_status", "typeSchema": "public", "primaryKey": false, "notNull": true, "default": "'pending'" },
+        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true, "default": "now()" },
+        "completed_at": { "name": "completed_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": false }
+      },
+      "indexes": {
+        "redemptions_scout_idx": { "name": "redemptions_scout_idx", "columns": [{ "expression": "scout_id", "isExpression": false, "asc": true, "nulls": "last" }], "isUnique": false, "concurrently": false, "method": "btree", "with": {} },
+        "redemptions_coupon_idx": { "name": "redemptions_coupon_idx", "columns": [{ "expression": "coupon_id", "isExpression": false, "asc": true, "nulls": "last" }], "isUnique": false, "concurrently": false, "method": "btree", "with": {} },
+        "redemptions_status_idx": { "name": "redemptions_status_idx", "columns": [{ "expression": "status", "isExpression": false, "asc": true, "nulls": "last" }], "isUnique": false, "concurrently": false, "method": "btree", "with": {} }
+      },
+      "foreignKeys": {
+        "redemptions_scout_id_scouts_id_fk": { "name": "redemptions_scout_id_scouts_id_fk", "tableFrom": "redemptions", "tableTo": "scouts", "columnsFrom": ["scout_id"], "columnsTo": ["id"], "onDelete": "cascade", "onUpdate": "no action" }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sourcing": {
+      "name": "sourcing",
+      "schema": "",
+      "columns": {
+        "id": { "name": "id", "type": "uuid", "primaryKey": true, "notNull": true, "default": "gen_random_uuid()" },
+        "buyer_id": { "name": "buyer_id", "type": "uuid", "primaryKey": false, "notNull": true },
+        "seller_id": { "name": "seller_id", "type": "uuid", "primaryKey": false, "notNull": true },
+        "verified": { "name": "verified", "type": "boolean", "primaryKey": false, "notNull": true, "default": false },
+        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true, "default": "now()" },
+        "verified_at": { "name": "verified_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": false }
+      },
+      "indexes": {
+        "sourcing_pair_idx": { "name": "sourcing_pair_idx", "columns": [{ "expression": "buyer_id", "isExpression": false, "asc": true, "nulls": "last" }, { "expression": "seller_id", "isExpression": false, "asc": true, "nulls": "last" }], "isUnique": true, "concurrently": false, "method": "btree", "with": {} }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "sourcing_no_self_loop": { "name": "sourcing_no_self_loop", "value": "\"sourcing\".\"buyer_id\" <> \"sourcing\".\"seller_id\"" }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reviews": {
+      "name": "reviews",
+      "schema": "",
+      "columns": {
+        "id": { "name": "id", "type": "uuid", "primaryKey": true, "notNull": true, "default": "gen_random_uuid()" },
+        "scout_id": { "name": "scout_id", "type": "uuid", "primaryKey": false, "notNull": true },
+        "business_id": { "name": "business_id", "type": "uuid", "primaryKey": false, "notNull": true },
+        "rating": { "name": "rating", "type": "smallint", "primaryKey": false, "notNull": true },
+        "body": { "name": "body", "type": "text", "primaryKey": false, "notNull": false },
+        "created_at": { "name": "created_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true, "default": "now()" },
+        "updated_at": { "name": "updated_at", "type": "timestamp with time zone", "primaryKey": false, "notNull": true, "default": "now()" }
+      },
+      "indexes": {
+        "reviews_business_idx": { "name": "reviews_business_idx", "columns": [{ "expression": "business_id", "isExpression": false, "asc": true, "nulls": "last" }], "isUnique": false, "concurrently": false, "method": "btree", "with": {} },
+        "reviews_scout_business_idx": { "name": "reviews_scout_business_idx", "columns": [{ "expression": "scout_id", "isExpression": false, "asc": true, "nulls": "last" }, { "expression": "business_id", "isExpression": false, "asc": true, "nulls": "last" }], "isUnique": true, "concurrently": false, "method": "btree", "with": {} }
+      },
+      "foreignKeys": {
+        "reviews_scout_id_scouts_id_fk": { "name": "reviews_scout_id_scouts_id_fk", "tableFrom": "reviews", "tableTo": "scouts", "columnsFrom": ["scout_id"], "columnsTo": ["id"], "onDelete": "cascade", "onUpdate": "no action" }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "reviews_rating_range": { "name": "reviews_rating_range", "value": "\"reviews\".\"rating\" between 1 and 5" }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.redemption_status": { "name": "redemption_status", "schema": "public", "values": ["pending", "completed"] },
+    "public.scout_badge": { "name": "scout_badge", "schema": "public", "values": ["none", "bronze", "silver", "gold"] }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": { "columns": {}, "schemas": {}, "tables": {} }
+}
