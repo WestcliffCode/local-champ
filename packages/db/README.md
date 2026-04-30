@@ -17,7 +17,7 @@ To let Drizzle queries read Payload-owned tables in pSEO routes, we mirror the P
 
 ## Migration files
 
-```
+```text
 packages/db/drizzle/
 ├── 0000_silly_black_panther.sql      # Phase 1.A — initial Drizzle tables
 ├── 0001_rls_policies.sql             # Phase 1.A — RLS on Drizzle-owned tables

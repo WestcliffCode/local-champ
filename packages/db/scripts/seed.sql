@@ -39,7 +39,7 @@ VALUES
   ('Magnolia Petals',            'magnolia-petals',            'asheville', 'florist',   'verified', false, 'Asheville', 'NC', 4.6, 134, 20, 10),
   ('Asheville Books & Bindery',  'asheville-books-and-bindery','asheville', 'bookstore', 'verified', false, 'Asheville', 'NC', 4.9, 312, 55, 30),
   ('Battery Park Reading Co',    'battery-park-reading-co',    'asheville', 'bookstore', 'verified', false, 'Asheville', 'NC', 4.5,  87, 25,  0)
-ON CONFLICT DO NOTHING;
+ON CONFLICT ("slug") DO NOTHING;
 
 -- =============================================================================
 -- coupons (joined back to businesses by slug)
