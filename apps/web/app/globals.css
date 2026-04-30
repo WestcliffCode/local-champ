@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
-/* =============================================================================
+/* ====================================================================
  * Heritage Tones — defined as Tailwind 4 theme tokens.
  * These generate utilities like `bg-forest-green`, `text-cream`, `border-charcoal`.
  * Mirrored in @localchamp/ui/styles/theme.css for cross-app reuse (mobile, etc.).
  *
- * Scoped to (frontend) routes only — Payload admin (/admin) uses its own CSS
- * via @payloadcms/next/css.
- * ============================================================================= */
+ * Shared by both (frontend) and (directory) route groups. Payload admin
+ * (/admin) uses its own CSS via @payloadcms/next/css.
+ * ==================================================================== */
 @theme {
   --color-forest-green: #0C401E;
   --color-cream: #FBEDD4;
