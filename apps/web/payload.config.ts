@@ -26,6 +26,24 @@ const dirname = path.dirname(filename);
  * critical because dev and prod point at the same Supabase project — `push`
  * mode would auto-mutate schema based on local code, which is unsafe on shared DBs.
  */
+
+// Fail fast on missing critical env vars. For local dev, populate `.env.local`
+// from `.env.example`. For CI / `payload migrate:create` / `payload generate:*`,
+// any non-empty placeholder satisfies the check (those commands don't connect).
+const PAYLOAD_SECRET = process.env.PAYLOAD_SECRET;
+if (!PAYLOAD_SECRET) {
+  throw new Error(
+    'PAYLOAD_SECRET is not set. Generate one with `openssl rand -hex 32` and add it to .env.local (development) or your hosting provider env vars (production).',
+  );
+}
+
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  throw new Error(
+    'DATABASE_URL is not set. Use the Supabase pooler "Session" URI from Settings → Database → Connection string.',
+  );
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -38,13 +56,13 @@ export default buildConfig({
   },
   collections: [Businesses, Coupons, Users],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET ?? '',
+  secret: PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL ?? '',
+      connectionString: DATABASE_URL,
     },
     push: false,
     // UUID primary keys across all Payload collections — matches PRD spec

@@ -127,18 +127,33 @@ export const Businesses: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       index: true,
+      // Field-level write access blocks merchants from tampering via the
+      // REST/GraphQL API. The score is computed by an afterChange hook in
+      // Phase 5; that hook uses the Local API which bypasses field access.
+      access: {
+        create: ({ req: { user } }) =>
+          Boolean(user && (user as { role?: string }).role === 'admin'),
+        update: ({ req: { user } }) =>
+          Boolean(user && (user as { role?: string }).role === 'admin'),
+      },
       admin: {
-        description: 'Community Participation Score — recomputed in afterChange (Phase 5).',
-        readOnly: true,
+        description:
+          'Community Participation Score — computed by Phase 5 hooks. Admin-only manual override.',
       },
     },
     {
       name: 'local_loop_score',
       type: 'number',
       defaultValue: 0,
+      access: {
+        create: ({ req: { user } }) =>
+          Boolean(user && (user as { role?: string }).role === 'admin'),
+        update: ({ req: { user } }) =>
+          Boolean(user && (user as { role?: string }).role === 'admin'),
+      },
       admin: {
-        description: '+10 per verified sourcing edge. See @localchamp/logic/scoring.',
-        readOnly: true,
+        description:
+          '+10 per verified sourcing edge (see @localchamp/logic/scoring). Admin-only manual override.',
       },
     },
   ],

@@ -35,8 +35,11 @@ export const Coupons: CollectionConfig = {
   hooks: {
     beforeChange: [
       ({ req: { user }, data, operation }) => {
-        // For non-admin merchants, force `business` to their own.
-        if (!user || operation !== 'create') return data;
+        // For non-admin merchants, force `business` to their own on both
+        // create AND update — prevents reassignment of an existing coupon to
+        // a different business.
+        if (!user) return data;
+        if (operation !== 'create' && operation !== 'update') return data;
         const u = user as { role?: string; business?: string };
         if (u.role === 'admin') return data;
         if (u.business) {
@@ -53,9 +56,16 @@ export const Coupons: CollectionConfig = {
       relationTo: 'businesses',
       required: true,
       index: true,
+      // Field-level access: only admins can change `business` after create.
+      // Combined with the beforeChange hook above, this is belt-and-suspenders
+      // protection against merchants reassigning a coupon to a different business.
+      access: {
+        update: ({ req: { user } }) =>
+          Boolean(user && (user as { role?: string }).role === 'admin'),
+      },
       admin: {
         description:
-          'For merchants, this is automatically set to your own business and cannot be changed.',
+          'For merchants, this is automatically set to your own business and cannot be changed after creation.',
       },
     },
     { name: 'title', type: 'text', required: true },
