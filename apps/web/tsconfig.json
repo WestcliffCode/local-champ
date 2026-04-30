@@ -7,7 +7,8 @@
     "allowJs": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@payload-config": ["./payload.config.ts"]
     }
   },
   "include": [
@@ -16,5 +17,5 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "migrations"]
 }

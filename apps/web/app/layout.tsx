@@ -1,23 +1,17 @@
-import type { Metadata } from 'next';
-import './globals.css';
-
-export const metadata: Metadata = {
-  title: {
-    default: 'LocalChamp',
-    template: '%s · LocalChamp',
-  },
-  description:
-    'Discover and champion the best local businesses in your community.',
-};
-
+/**
+ * Root pass-through layout.
+ *
+ * Each route group provides its own <html><body> shell:
+ *   - (frontend)/layout.tsx — public-facing pages with Tailwind globals
+ *   - (payload)/layout.tsx — Payload admin UI via @payloadcms/next/layouts
+ *
+ * This is the canonical pattern for embedding Payload inside a Next.js app
+ * with conflicting style systems.
+ */
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
-    </html>
-  );
+  return children;
 }
