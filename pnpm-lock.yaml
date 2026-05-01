@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@next/env':
+      specifier: ^16.0.0
+      version: 16.2.4
     '@payloadcms/db-postgres':
       specifier: ^3.0.0
       version: 3.84.1
@@ -119,6 +122,9 @@ importers:
       '@localchamp/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@next/env':
+        specifier: 'catalog:'
+        version: 16.2.4
       '@payloadcms/db-postgres':
         specifier: 'catalog:'
         version: 3.84.1(payload@3.84.1(graphql@16.13.2)(typescript@5.9.3))(postgres@3.4.9)
