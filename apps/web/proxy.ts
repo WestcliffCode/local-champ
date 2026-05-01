@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { requireEnv } from './lib/env';
 
 /**
  * Refreshes the Supabase auth session on every matched request.
@@ -42,16 +43,20 @@ import { createServerClient } from '@supabase/ssr';
  * connotations. `proxy.ts` runs on the Node.js runtime by default. The
  * old `middleware` convention is deprecated and will be removed in a
  * future Next version. See https://nextjs.org/docs/messages/middleware-to-proxy
+ *
+ * **Env loading:** done via `requireEnv()` so the resulting consts are typed
+ * `string` (not `string | undefined`), which TypeScript narrows correctly
+ * across the closure boundary into `proxy()`.
  */
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error(
-    'Supabase env vars missing in proxy — set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel for Production + Preview + Development (Workflow Gotcha #9).',
-  );
-}
+const SUPABASE_URL = requireEnv(
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'Set in Vercel env for Production + Preview + Development (Workflow Gotcha #9).',
+);
+const SUPABASE_ANON_KEY = requireEnv(
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'Set in Vercel env for Production + Preview + Development (Workflow Gotcha #9).',
+);
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
