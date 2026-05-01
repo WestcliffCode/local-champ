@@ -19,6 +19,7 @@
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "@next/env": "catalog:",
     "@tanstack/react-query": "catalog:",
     "payload": "catalog:",
     "@payloadcms/db-postgres": "catalog:",
