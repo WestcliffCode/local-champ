@@ -9,5 +9,4 @@ export {
   categoryTag,
   businessTag,
   businessSlugTag,
-  businessTagOrSlugTag,
 } from "./cache-tags";
