@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { requireEnv } from './lib/env';
 
 /**
@@ -47,6 +47,12 @@ import { requireEnv } from './lib/env';
  * **Env loading:** done via `requireEnv()` so the resulting consts are typed
  * `string` (not `string | undefined`), which TypeScript narrows correctly
  * across the closure boundary into `proxy()`.
+ *
+ * **`setAll` parameter annotation:** `@supabase/ssr` types the `cookies`
+ * option as a union; under `strict` + `noImplicitAny`, TypeScript can't
+ * pick a variant from an inline object literal, so `setAll`'s `cookiesToSet`
+ * parameter falls through as implicit `any` and the build fails. Annotating
+ * the parameter with the explicit shape disambiguates the variant.
  */
 
 const SUPABASE_URL = requireEnv(
@@ -66,7 +72,7 @@ export async function proxy(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>) {
         // Stage cookies on the inbound request so subsequent reads in this
         // proxy see them, then re-create the response with fresh cookies
         // so the BROWSER receives the refreshed session.
