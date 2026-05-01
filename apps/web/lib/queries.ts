@@ -107,6 +107,22 @@ export type SourcingPartner = {
   direction: 'sells_to' | 'buys_from';
 };
 
+/**
+ * Result envelope for `searchBusinessesInCity`. Includes the rows for the
+ * requested page plus enough metadata for the page component to render
+ * pagination controls without a second query.
+ */
+export type SearchResultPage = {
+  rows: DirectoryBusinessRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
+};
+
+/** Default search page size. Exported so the page component can stay in sync. */
+export const SEARCH_DEFAULT_PAGE_SIZE = 20;
+
 // =====================================================================
 // Pure helpers (in-process; not cached)
 // =====================================================================
@@ -503,5 +519,98 @@ export async function getStaticBusinessParams(): Promise<
     },
     ['directory', 'getStaticBusinessParams'],
     { tags: [directoryTag()], revalidate: 3600 },
+  )();
+}
+
+/**
+ * City-scoped Postgres FTS search.
+ *
+ * Matches businesses in `citySlug` whose `search_tsv` (a STORED tsvector
+ * over `name + category_slug + city_slug`, GIN-indexed in migration
+ * `0003_cities_and_fts.sql`) satisfies `websearch_to_tsquery('english', q)`.
+ * Ranks by `ts_rank_cd` (cover-density rank — favors documents that match
+ * more search terms close together), then `cps_score`, then alphabetically.
+ *
+ * The caller (the search page) MUST trim and reject empty `query` values
+ * before calling — passing an empty string would just return zero rows
+ * (Postgres treats `tsv @@ ''::tsquery` as FALSE), but spending a DB round
+ * trip on it is wasteful.
+ *
+ * **Why two queries instead of `count(*) over ()`** (which would be
+ * tempting because it's "just one round trip"): when `LIMIT/OFFSET` filters
+ * out every row (e.g. user typed `?page=999&q=coffee`), Postgres returns
+ * zero rows AND therefore zero instances of the windowed `count`. We'd lose
+ * the ability to distinguish "truly no matches" from "page beyond range".
+ * The route layer needs that distinction to render a clean 404 vs. a
+ * "no results" message. So we count first, then page if total > 0.
+ *
+ * Cached with a SHORTER TTL than other directory queries (5 min vs 1 hour)
+ * because user-supplied search strings have higher key cardinality. Same
+ * tag set as other city queries, so existing Payload `afterChange` hooks
+ * already invalidate this without any extra wiring.
+ */
+export async function searchBusinessesInCity(
+  citySlug: string,
+  query: string,
+  options: { page?: number; pageSize?: number } = {},
+): Promise<SearchResultPage> {
+  const page = Math.max(1, Math.floor(options.page ?? 1));
+  const pageSize = Math.max(1, Math.floor(options.pageSize ?? SEARCH_DEFAULT_PAGE_SIZE));
+  const offset = (page - 1) * pageSize;
+
+  return unstable_cache(
+    async (): Promise<SearchResultPage> => {
+      const tsQuery = sql`websearch_to_tsquery('english', ${query})`;
+      const where = and(
+        eq(businesses.citySlug, citySlug),
+        sql`"search_tsv" @@ ${tsQuery}`,
+      );
+
+      // Count first so we can distinguish "no matches" (total=0) from
+      // "page out of range" (total>0 but offset > total). Caller relies on
+      // the distinction to render 404 vs. no-results.
+      const [countRow] = await db
+        .select({ total: sql<number>`count(*)::int` })
+        .from(businesses)
+        .where(where);
+      const total = Number(countRow?.total ?? 0);
+      const pageCount = total === 0 ? 0 : Math.ceil(total / pageSize);
+
+      if (total === 0 || offset >= total) {
+        return { rows: [], total, page, pageSize, pageCount };
+      }
+
+      const tsRank = sql<number>`ts_rank_cd("search_tsv", ${tsQuery})`;
+      const rows = await db
+        .select(businessSelect)
+        .from(businesses)
+        .where(where)
+        .orderBy(desc(tsRank), desc(businesses.cpsScore), asc(businesses.name))
+        .limit(pageSize)
+        .offset(offset);
+
+      return {
+        rows: rows.map(shapeBusinessRow),
+        total,
+        page,
+        pageSize,
+        pageCount,
+      };
+    },
+    [
+      'directory',
+      'searchBusinessesInCity',
+      citySlug,
+      query,
+      String(page),
+      String(pageSize),
+    ],
+    {
+      // 5min TTL — shorter than the 1h page baseline because search keys
+      // have higher cardinality (any string the user types). The payoff
+      // for caching a unique query is low; popular queries still benefit.
+      tags: [directoryTag(), cityTag(citySlug)],
+      revalidate: 300,
+    },
   )();
 }
