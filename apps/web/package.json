@@ -29,6 +29,7 @@
     "@supabase/supabase-js": "catalog:",
     "sharp": "catalog:",
     "graphql": "^16.9.0",
+    "twilio": "catalog:",
     "@localchamp/db": "workspace:*",
     "@localchamp/logic": "workspace:*",
     "@localchamp/types": "workspace:*",

@@ -41,5 +41,8 @@ catalog:
   "@payloadcms/ui": ^3.0.0
   sharp: ^0.34.5
 
+  # Twilio Verify (Phase 3 D3 — merchant claim flow)
+  twilio: ^6.0.0
+
   # Linting
   eslint-config-next: ^16.0.0
