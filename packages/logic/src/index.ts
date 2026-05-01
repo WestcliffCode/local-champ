@@ -3,4 +3,11 @@
 export * from "./scoring";
 export * from "./aeo-schemas";
 export * from "./text";
-export * from "./cache-tags";
+export {
+  directoryTag,
+  cityTag,
+  categoryTag,
+  businessTag,
+  businessSlugTag,
+  businessTagOrSlugTag,
+} from "./cache-tags";
