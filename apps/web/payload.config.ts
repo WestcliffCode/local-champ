@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadEnvConfig } from '@next/env';
+import nextEnv from '@next/env';
 import { postgresAdapter } from '@payloadcms/db-postgres';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { buildConfig } from 'payload';
@@ -31,7 +31,13 @@ const dirname = path.dirname(filename);
  * Precedence (matches Next.js):
  *   .env.local > .env.development > .env  (in dev)
  *   .env.production > .env                (in prod, when .env files exist)
+ *
+ * Default-import + destructure pattern: `@next/env` ships as CJS, so
+ * named ESM imports (`import { loadEnvConfig }`) fail under Node's strict
+ * ESM loader. Default import + destructure works for both CJS (default =
+ * module.exports object) and any future ESM build of the same shape.
  */
+const { loadEnvConfig } = nextEnv;
 loadEnvConfig(dirname);
 
 /**
