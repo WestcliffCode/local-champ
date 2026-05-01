@@ -30,9 +30,23 @@ export type CurrentScout = Pick<
  * redemption-tracking pages) MUST handle the null case explicitly — typically
  * `redirect('/scout/sign-in')`.
  *
+ * **Why getClaims() and not getUser():** `getClaims()` validates the JWT
+ * locally against Supabase's JWKS (cached client-side after the first hit)
+ * and returns the decoded claims. The common case is zero network
+ * round-trips. `getUser()` always hits the Auth server. We only need
+ * `claims.sub` (the `auth.uid()`) to look up the scouts row, so the
+ * local-validation path is strictly better for performance with identical
+ * security properties — both return only after the JWT signature is
+ * verified.
+ *
+ * Per Supabase docs (https://supabase.com/docs/reference/javascript/auth-getclaims):
+ * if the access token is near expiry when this is called, the session
+ * is refreshed before validation. Same refresh semantics as `getUser()`,
+ * just without the unnecessary user-lookup round-trip.
+ *
  * **Where the read goes:** through Drizzle, which connects via the Supabase
  * pooler service URI and bypasses RLS. That's intentional for this helper:
- *   1. We're already authenticated by the prior `supabase.auth.getUser()` call
+ *   1. The JWT was already validated by the prior `getClaims()` call
  *   2. The lookup is by the user's own `auth.uid()` — there's no cross-tenant
  *      risk
  *   3. Initialising a per-request authed Postgres connection just to defer
@@ -45,11 +59,13 @@ export type CurrentScout = Pick<
  */
 export async function getCurrentScout(): Promise<CurrentScout | null> {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
 
-  if (!user) return null;
+  // No session, JWT validation failure, or missing `sub` claim — all map
+  // to "no signed-in scout" from the caller's perspective.
+  if (error || !data?.claims?.sub) return null;
+
+  const authUserId = data.claims.sub;
 
   const [row] = await db
     .select({
@@ -60,7 +76,7 @@ export async function getCurrentScout(): Promise<CurrentScout | null> {
       badgeStatus: schema.scouts.badgeStatus,
     })
     .from(schema.scouts)
-    .where(eq(schema.scouts.authUserId, user.id))
+    .where(eq(schema.scouts.authUserId, authUserId))
     .limit(1);
 
   return row ?? null;
