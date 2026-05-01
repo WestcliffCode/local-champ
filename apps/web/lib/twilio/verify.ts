@@ -17,6 +17,12 @@ import { requireEnv } from '../env';
  *   by the merchant. Returns `approved: true` only when Twilio's status is
  *   exactly `'approved'`.
  *
+ * Plus rate-limit primitives (added in Step 7):
+ * - `consumeAttempt(userId)` — module-scope per-user attempt counter.
+ *   5 attempts per 15 minutes per user, shared across both
+ *   `startVerification` and `checkVerification` so an attacker can't
+ *   bypass by alternating channel and code submissions.
+ *
  * **Env vars** (set in Vercel for Production + Preview + Development per
  * Workflow Gotcha #9 in the handoff doc):
  *
@@ -138,4 +144,85 @@ export async function checkVerification(
       err instanceof Error ? err.message : 'Failed to check verification.';
     return { approved: false, status: 'error', message };
   }
+}
+
+// =====================================================================
+// Step 7: in-memory rate limit
+// =====================================================================
+
+/**
+ * Per-user attempt counter for Twilio Verify operations.
+ *
+ * **Why module-scope state:** the merchant-claim flow expects very low
+ * traffic at MVP (a few merchants per day) and a per-user counter
+ * without a network round-trip is the simplest defense against
+ * accidental loops or scripted abuse. Production scale will replace
+ * this with Vercel KV / Redis when traffic justifies it; the call site
+ * (Server Action) doesn't change shape.
+ *
+ * **State semantics:** the Map lives in process memory, so it survives
+ * across requests on the same Vercel function instance but resets on
+ * cold starts and isn't shared across instances. That's acceptable for
+ * MVP — the worst case under cold starts is that a determined attacker
+ * gets a few extra attempts after a function reload, still bounded by
+ * Twilio's own throttling on the upstream API.
+ *
+ * **Counts both startVerification and checkVerification.** Both consume
+ * Twilio API quota, both can be the target of automation, and an
+ * attacker shouldn't be able to bypass the limit by alternating between
+ * "start a new verification" and "guess the code." A single shared
+ * counter blocks the natural attack shapes.
+ */
+type AttemptWindow = { count: number; windowStart: number };
+
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+
+const attemptsByUser = new Map<string, AttemptWindow>();
+
+export type RateLimitResult =
+  | { ok: true; remaining: number }
+  | { ok: false; resetInSeconds: number };
+
+/**
+ * Consume one attempt against the per-user rate limit. Returns
+ * `ok: false` with a `resetInSeconds` window if the user has exceeded
+ * 5 attempts within the last 15 minutes.
+ *
+ * Call this from the Server Action BEFORE invoking `startVerification`
+ * or `checkVerification` so failed attempts (network errors, invalid
+ * codes) still consume quota — that's the whole point of the limit.
+ *
+ * Edge cases:
+ *   - Brand-new user, no prior attempts: opens a fresh window with count=1.
+ *   - Stale window (now - windowStart >= window size): resets to count=1.
+ *   - Active window with count<max: increments; returns ok=true with
+ *     remaining count.
+ *   - Active window at max: returns ok=false with the time-to-reset.
+ *
+ * Note: the limit is enforced PER USER (Payload `users.id`). A single
+ * user's attempts on multiple businesses share one counter — by design.
+ * If a user genuinely needs more attempts after exhausting the window,
+ * support can manually clear the row in the future-Redis/KV adapter or
+ * the user can wait 15 minutes.
+ */
+export function consumeAttempt(userId: string): RateLimitResult {
+  const now = Date.now();
+  const window = attemptsByUser.get(userId);
+
+  if (!window || now - window.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    // Fresh or expired window — start a new one.
+    attemptsByUser.set(userId, { count: 1, windowStart: now });
+    return { ok: true, remaining: RATE_LIMIT_MAX_ATTEMPTS - 1 };
+  }
+
+  if (window.count >= RATE_LIMIT_MAX_ATTEMPTS) {
+    const resetInSeconds = Math.ceil(
+      (window.windowStart + RATE_LIMIT_WINDOW_MS - now) / 1000,
+    );
+    return { ok: false, resetInSeconds };
+  }
+
+  window.count += 1;
+  return { ok: true, remaining: RATE_LIMIT_MAX_ATTEMPTS - window.count };
 }

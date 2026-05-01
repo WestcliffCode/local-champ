@@ -80,3 +80,51 @@ export async function findExistingBusinessClaim(
   const claimer = result.docs[0] as User;
   return { email: claimer.email };
 }
+
+/**
+ * Step 6: enforce the 1:1 phone-to-merchant invariant.
+ *
+ * Returns the existing claimer's email if any user OTHER than
+ * `excludeUserId` has `verified_phone` equal to the given E.164 phone,
+ * or `null` if the phone is free.
+ *
+ * Called from the claim Server Action before EVERY Twilio interaction
+ * (start_voice, start_sms, submit_code) — not just before
+ * startVerification. Defense-in-depth against the user racing /
+ * reloading between stages: if Account A's phone X claimed Business Y1
+ * mid-flow, Account B trying to use phone X for Y2 should be rejected
+ * even if they already started a verification.
+ *
+ * **Why excludeUserId:** the current user's own row may already exist
+ * with verified_phone set (if they started a claim, succeeded server-
+ * side, but their browser hasn't redirected yet). Excluding them by
+ * `id != current` makes the check robust to that race. In normal
+ * operation the current user has `verified_phone === null` until the
+ * approval write happens, so the exclude is a no-op; it's purely for
+ * defense.
+ *
+ * Goes through Payload's Local API for the same reason as
+ * `findExistingBusinessClaim` — `users` is Payload-owned and we want
+ * the abstractions Payload provides (access controls, hooks) to apply
+ * uniformly. Local API bypasses field-level access by design.
+ */
+export async function findUserByVerifiedPhone(
+  phone: string,
+  excludeUserId: string,
+): Promise<{ email: string } | null> {
+  const payload = await getPayload({ config });
+  const result = await payload.find({
+    collection: 'users',
+    where: {
+      and: [
+        { verified_phone: { equals: phone } },
+        { id: { not_equals: excludeUserId } },
+      ],
+    },
+    limit: 1,
+    depth: 0,
+  });
+  if (result.docs.length === 0) return null;
+  const owner = result.docs[0] as User;
+  return { email: owner.email };
+}

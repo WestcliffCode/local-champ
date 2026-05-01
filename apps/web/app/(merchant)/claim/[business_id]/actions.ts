@@ -7,10 +7,12 @@ import { getPayload } from 'payload';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import {
   findExistingBusinessClaim,
+  findUserByVerifiedPhone,
   getBusinessForClaim,
 } from '@/lib/merchant-business';
 import {
   checkVerification,
+  consumeAttempt,
   startVerification,
   type VerificationChannel,
 } from '@/lib/twilio/verify';
@@ -55,16 +57,14 @@ export type ClaimState =
  *     never trusts a form-supplied phone number.
  *   - Existing claim by another user: re-checks every action, in case
  *     someone finished concurrently between page render and submit.
- *
- * **Coming in Step 6 (1:1 phone-uniqueness check):** before
- * `startVerification` AND before `checkVerification`, query Payload
- * `users` for `verified_phone === <phone>` excluding the current user.
- * If found, return error code `phone_already_claimed` (stable string,
- * no raw provider info — same posture as the D2 magic-link callback).
- *
- * **Coming in Step 7 (rate limiting):** in-memory `Map<userId,
- * {attempts, windowStart}>` in `lib/twilio/verify.ts` with 5 attempts
- * per 15-minute window per user. Defer to Vercel KV / Redis at scale.
+ *   - **1:1 phone uniqueness (Step 6):** re-checks every action that
+ *     touches Twilio, in case another user's `verified_phone` was set
+ *     mid-flow. Returns to confirm/awaiting_code with a clear
+ *     human-readable error.
+ *   - **Per-user rate limit (Step 7):** consumes one attempt against
+ *     a 5-per-15min window before each Twilio interaction. Counts both
+ *     startVerification and checkVerification — bypassing by
+ *     alternating channel + code submissions wouldn't work.
  */
 export async function claimBusinessAction(
   prevState: ClaimState,
@@ -75,7 +75,10 @@ export async function claimBusinessAction(
   const businessId = formData.get('businessId');
 
   if (typeof businessId !== 'string' || businessId.length === 0) {
-    return { stage: 'confirm', error: 'Missing business id. Refresh and try again.' };
+    return {
+      stage: 'confirm',
+      error: 'Missing business id. Refresh and try again.',
+    };
   }
 
   // ---------- Defense-in-depth guards ----------
@@ -113,6 +116,43 @@ export async function claimBusinessAction(
   // Helper: previous channel for staying-on-same-stage error returns.
   const prevChannel: VerificationChannel =
     prevState.stage === 'awaiting_code' ? prevState.channel : 'call';
+
+  // Helper: build an error response that preserves the user's current
+  // visual stage. Used by both the rate limit and the phone-uniqueness
+  // checks below, plus general error paths.
+  const errorAtCurrentStage = (message: string): ClaimState =>
+    prevState.stage === 'awaiting_code'
+      ? { stage: 'awaiting_code', channel: prevChannel, error: message }
+      : { stage: 'confirm', error: message };
+
+  // ---------- Step 6: 1:1 phone uniqueness ----------
+  // Re-check before EVERY Twilio interaction so a race between this
+  // user's flow and another user's claim is caught at every stage.
+  const phoneOwner = await findUserByVerifiedPhone(business.phone, user.id);
+  if (phoneOwner) {
+    return errorAtCurrentStage(
+      'This phone number is already linked to another LocalChamp account. If you believe this is in error, contact support.',
+    );
+  }
+
+  // ---------- Step 7: per-user rate limit ----------
+  // Consume one attempt before each Twilio call. The defense-in-depth
+  // checks above run first because they're cheap and free of side
+  // effects — no point burning rate-limit quota on a request that's
+  // going to be rejected for tenancy reasons.
+  if (
+    action === 'start_voice' ||
+    action === 'start_sms' ||
+    action === 'submit_code'
+  ) {
+    const rate = consumeAttempt(user.id);
+    if (!rate.ok) {
+      const minutes = Math.max(1, Math.ceil(rate.resetInSeconds / 60));
+      return errorAtCurrentStage(
+        `Too many attempts. Please wait ${minutes} minute${minutes === 1 ? '' : 's'} before trying again.`,
+      );
+    }
+  }
 
   // ---------- Dispatch on action ----------
   if (action === 'start_voice' || action === 'start_sms') {
@@ -182,11 +222,5 @@ export async function claimBusinessAction(
   }
 
   // Unknown action — preserve previous state, surface a generic error.
-  return prevState.stage === 'awaiting_code'
-    ? {
-        stage: 'awaiting_code',
-        channel: prevState.channel,
-        error: 'Unknown action. Please refresh the page.',
-      }
-    : { stage: 'confirm', error: 'Unknown action. Please refresh the page.' };
+  return errorAtCurrentStage('Unknown action. Please refresh the page.');
 }
