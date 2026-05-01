@@ -34,9 +34,20 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  * through the pooler avoids initialising a per-request authed Postgres
  * connection just to defer to a policy that's already satisfied.
  *
- * **Error handling:** any failure (missing code, exchange error, missing
- * email on the user record) bounces back to `/scout/sign-in?error=...`
- * with a short reason code so the form can render an inline message.
+ * **Error handling:** any failure bounces back to `/scout/sign-in?error=<code>`
+ * with a stable, non-sensitive reason code so the form can render an inline
+ * message and our error contract with the client stays predictable. Codes:
+ *   - `missing_code`              \u2014 no `code` query param on the URL
+ *   - `auth_exchange_failed`      \u2014 `exchangeCodeForSession` returned an error
+ *   - `auth_failed`               \u2014 exchange succeeded but `user.id` or
+ *                                    `user.email` was missing (shouldn't happen
+ *                                    in practice, but the type allows null)
+ *   - `profile_provision_failed`  \u2014 the scouts row INSERT threw (transient DB
+ *                                    issue, etc.). Session was created so the
+ *                                    user can retry.
+ *
+ * We intentionally do NOT echo `error.message` from Supabase into the URL \u2014
+ * those messages aren't a stable contract and can change with library updates.
  */
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -52,22 +63,35 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data?.user?.id || !data.user.email) {
-    const reason = error?.message ?? 'auth_failed';
+    const reason = error ? 'auth_exchange_failed' : 'auth_failed';
     return NextResponse.redirect(
-      new URL(`/scout/sign-in?error=${encodeURIComponent(reason)}`, url),
+      new URL(`/scout/sign-in?error=${reason}`, url),
     );
   }
 
   // Provision the scouts row on first sign-in. ON CONFLICT DO NOTHING is
   // keyed on `auth_user_id` (which is UNIQUE in the schema). Returning
   // users skip the INSERT and keep their existing row state intact.
-  await db
-    .insert(schema.scouts)
-    .values({
-      authUserId: data.user.id,
-      email: data.user.email,
-    })
-    .onConflictDoNothing({ target: schema.scouts.authUserId });
+  //
+  // Wrapped in try/catch so a transient DB failure (connection blip, pooler
+  // hiccup) doesn't fall through as an unhandled 500 \u2014 the session was
+  // already exchanged and the cookies are set, so the user is technically
+  // authenticated. Bouncing them back to /scout/sign-in with a recoverable
+  // error code lets them try again; their existing session will carry through
+  // and the next attempt's INSERT will likely succeed.
+  try {
+    await db
+      .insert(schema.scouts)
+      .values({
+        authUserId: data.user.id,
+        email: data.user.email,
+      })
+      .onConflictDoNothing({ target: schema.scouts.authUserId });
+  } catch {
+    return NextResponse.redirect(
+      new URL('/scout/sign-in?error=profile_provision_failed', url),
+    );
+  }
 
   return NextResponse.redirect(new URL('/scout/profile', url));
 }

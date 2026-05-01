@@ -68,7 +68,12 @@ export function ScoutAuthForm({ mode }: ScoutAuthFormProps) {
   }
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
+    // No `noValidate` \u2014 we WANT the browser's native checks for `type="email"`
+    // and `required` to fire. They give immediate feedback before any
+    // round-trip. The Server Action does a stricter check (must contain `@`
+    // AND `.`) as a backstop for browsers with lenient email validation, but
+    // most users get instant native feedback for the common typos.
+    <form action={formAction} className="space-y-4">
       <div className="space-y-2">
         <label
           htmlFor="email"

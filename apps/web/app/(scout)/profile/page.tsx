@@ -21,7 +21,10 @@ export default async function ScoutProfilePage() {
   }
 
   const badgeLabel = BADGE_LABELS[scout.badgeStatus] ?? scout.badgeStatus;
-  const greetingName = scout.fullName?.trim() ?? scout.email.split('@')[0];
+  // `||` (not `??`) so a whitespace-only `fullName` (e.g. "   ") falls back to
+  // the email local-part too \u2014 `trim()` would yield `""`, and `??` only
+  // short-circuits on `null`/`undefined`, so we'd otherwise render "Welcome, .".
+  const greetingName = scout.fullName?.trim() || scout.email.split('@')[0];
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
