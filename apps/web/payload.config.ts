@@ -32,13 +32,20 @@ const dirname = path.dirname(filename);
  *   .env.local > .env.development > .env  (in dev)
  *   .env.production > .env                (in prod, when .env files exist)
  *
+ * **Force dev mode (`true` as 2nd arg).** `loadEnvConfig` defaults `dev`
+ * to `process.env.NODE_ENV !== 'production'`. Payload's CLI may set
+ * NODE_ENV=production internally before this evaluates, which would skip
+ * `.env.local`. The CLI is never invoked in actual production deploys
+ * (Vercel injects env from the platform), so forcing dev mode here is
+ * always correct for the cases that matter.
+ *
  * Default-import + destructure pattern: `@next/env` ships as CJS, so
  * named ESM imports (`import { loadEnvConfig }`) fail under Node's strict
  * ESM loader. Default import + destructure works for both CJS (default =
  * module.exports object) and any future ESM build of the same shape.
  */
 const { loadEnvConfig } = nextEnv;
-loadEnvConfig(dirname);
+loadEnvConfig(dirname, true);
 
 /**
  * LocalChamp Payload CMS configuration.
