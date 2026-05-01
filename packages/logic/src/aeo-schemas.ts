@@ -46,9 +46,18 @@ export type JsonLdValue =
  *
  * Output is still valid JSON and parses identically to the original on the
  * Schema.org consumer side.
+ *
+ * `JSON.stringify` returns `undefined` for non-serializable inputs (a bare
+ * `undefined`, a function, a symbol). All real callers in this codebase pass
+ * objects from the schema generators below, but the parameter is typed
+ * `unknown` so future callers could trip a `Cannot read .replace of undefined`
+ * runtime error. We fall back to the literal string `"null"` — valid JSON
+ * that Schema.org parsers will simply ignore inside the script tag.
  */
 export function stringifyJsonLd(value: unknown): string {
-  return JSON.stringify(value)
+  const json = JSON.stringify(value);
+  if (json === undefined) return 'null';
+  return json
     .replace(/</g, '\\u003C')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
