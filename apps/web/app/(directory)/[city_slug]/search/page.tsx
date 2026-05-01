@@ -16,7 +16,26 @@ const SITE_URL =
 
 interface PageProps {
   params: Promise<{ city_slug: string }>;
-  searchParams: Promise<{ q?: string; page?: string }>;
+  // Next.js searchParams values can be `string | string[] | undefined` —
+  // repeated params (`?q=foo&q=bar`) come through as an array. Reflecting
+  // that in the type so the call sites are forced to handle it via
+  // `firstParam` rather than crashing on `.trim()` etc.
+  searchParams: Promise<{
+    q?: string | string[];
+    page?: string | string[];
+  }>;
+}
+
+/**
+ * Coerce a possibly-array search param to a single string.
+ *
+ * Browsers serialize repeated `?q=foo&q=bar` as `q=['foo','bar']` server-side.
+ * For our intent we treat the FIRST occurrence as canonical (matches what
+ * browsers send when a form has duplicate inputs anyway).
+ */
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value;
 }
 
 /** Defensive parse of the `?page=` query param. Always returns ≥ 1. */
@@ -53,8 +72,8 @@ export async function generateMetadata({
 
   if (!city) return { title: 'Search', robots };
 
-  const q = (sp.q ?? '').trim();
-  const page = parsePageParam(sp.page);
+  const q = (firstParam(sp.q) ?? '').trim();
+  const page = parsePageParam(firstParam(sp.page));
   const canonicalPath = buildSearchHref(city.slug, q, page);
 
   return {
@@ -74,8 +93,8 @@ export default async function SearchPage({ params, searchParams }: PageProps) {
   const city = await getCityBySlug(city_slug);
   if (!city) notFound();
 
-  const q = (sp.q ?? '').trim();
-  const page = parsePageParam(sp.page);
+  const q = (firstParam(sp.q) ?? '').trim();
+  const page = parsePageParam(firstParam(sp.page));
 
   const cityUrl = `${SITE_URL}/${city.slug}`;
   const searchBaseUrl = `${SITE_URL}/${city.slug}/search`;
