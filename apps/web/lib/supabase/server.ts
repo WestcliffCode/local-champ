@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
+import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { requireEnv } from '../env';
 
 /**
@@ -23,6 +23,13 @@ import { requireEnv } from '../env';
  * via `requireEnv()` so the resulting consts are typed `string` (not
  * `string | undefined`), which TypeScript narrows correctly across the
  * closure boundary into `createSupabaseServerClient()`.
+ *
+ * **`setAll` parameter annotation:** `@supabase/ssr` types the `cookies`
+ * option as a union (`CookieMethodsServer | CookieMethodsServerDeprecated`).
+ * Under `strict` + `noImplicitAny`, TypeScript can't pick a variant from
+ * an inline object literal, so `setAll`'s `cookiesToSet` parameter falls
+ * through as implicit `any` and the build fails. Annotating the parameter
+ * with the explicit shape disambiguates the variant.
  */
 const SUPABASE_URL = requireEnv(
   'NEXT_PUBLIC_SUPABASE_URL',
@@ -41,7 +48,7 @@ export async function createSupabaseServerClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
