@@ -128,6 +128,12 @@ importers:
       '@payloadcms/ui':
         specifier: 'catalog:'
         version: 3.84.1(@types/react@19.2.14)(monaco-editor@0.55.1)(next@16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.77.4))(payload@3.84.1(graphql@16.13.2)(typescript@5.9.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@5.9.3)
+      '@supabase/ssr':
+        specifier: 'catalog:'
+        version: 0.5.2(@supabase/supabase-js@2.105.1)
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.105.1
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.100.6(react@19.2.5)

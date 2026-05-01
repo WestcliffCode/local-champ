@@ -25,6 +25,8 @@
     "@payloadcms/next": "catalog:",
     "@payloadcms/richtext-lexical": "catalog:",
     "@payloadcms/ui": "catalog:",
+    "@supabase/ssr": "catalog:",
+    "@supabase/supabase-js": "catalog:",
     "sharp": "catalog:",
     "graphql": "^16.9.0",
     "@localchamp/db": "workspace:*",
