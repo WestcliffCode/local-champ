@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -86,6 +86,13 @@ function buildClaimSearchHref(q: string, page: number): string {
  *   - Pagination matches the directory search (>= 1, 404-on-out-of-range
  *     is left to the [business_id] page since this view is a stable
  *     entry point we don't want to 404 on a typo)
+ *
+ * **typedRoutes assertion:** dynamic href values (template literals
+ * with route params, helper-function returns) need `as Route` casts
+ * under `experimental.typedRoutes` (promoted out of experimental in
+ * PR #4). The public directory search uses the same pattern — see
+ * `apps/web/app/(directory)/[city_slug]/search/page.tsx`. Static
+ * literal hrefs (`/merchant/claim`, `/admin/login`) don't need casts.
  */
 export default async function MerchantClaimSearchPage({
   searchParams,
@@ -210,7 +217,7 @@ export default async function MerchantClaimSearchPage({
           {result.rows.map((b) => (
             <li key={b.id}>
               <Link
-                href={`/merchant/claim/${b.id}`}
+                href={`/merchant/claim/${b.id}` as Route}
                 className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-accent focus:outline-none focus-visible:bg-accent"
               >
                 <div className="min-w-0">
@@ -251,7 +258,7 @@ export default async function MerchantClaimSearchPage({
         >
           {page > 1 ? (
             <Link
-              href={buildClaimSearchHref(q, page - 1)}
+              href={buildClaimSearchHref(q, page - 1) as Route}
               rel="prev"
               className="text-foreground hover:underline"
             >
@@ -266,7 +273,7 @@ export default async function MerchantClaimSearchPage({
           </span>
           {page < result.pageCount ? (
             <Link
-              href={buildClaimSearchHref(q, page + 1)}
+              href={buildClaimSearchHref(q, page + 1) as Route}
               rel="next"
               className="text-foreground hover:underline"
             >
