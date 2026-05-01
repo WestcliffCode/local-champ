@@ -37,3 +37,18 @@ export {
   type DirectoryHeroProps,
 } from './components/directory-hero';
 export { CityCard, type CityCardCity, type CityCardProps } from './components/city-card';
+
+/**
+ * Re-export lucide-react icons used by app-level pages so consumers don't
+ * need a direct `lucide-react` dependency. Kept narrow to surface the icons
+ * we actually use across the workspace; add more here as they're needed.
+ *
+ * Centralizing icon imports also means a future swap of icon library only
+ * touches this file.
+ */
+export {
+  MapPin,
+  Phone,
+  Star,
+  Tag,
+} from 'lucide-react';

@@ -1,4 +1,77 @@
-import type { CollectionConfig } from 'payload';
+import type { CollectionAfterChangeHook, CollectionConfig } from 'payload';
+import { revalidateTag } from 'next/cache';
+import { businessTag, directoryTag } from '@localchamp/logic';
+
+/**
+ * Resolve a Payload `relationship` field value to its underlying ID.
+ *
+ * The field returns either a string ID (depth 0) or a populated object
+ * (depth >= 1, shape `{ id, ... }`). Returns null for missing/malformed input.
+ */
+function extractBusinessId(
+  value: string | { id?: string } | null | undefined,
+): string | null {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object' && typeof value.id === 'string') {
+    return value.id;
+  }
+  return null;
+}
+
+/**
+ * Trigger Next.js ISR invalidation when a coupon is created or updated.
+ *
+ * Coupons render on the parent business's detail page, so we invalidate
+ * `business:{id}` for the parent. We also bust `directory` so the marketing
+ * home (which counts active coupons in future iterations) stays fresh.
+ *
+ * Reassignment safety: when an admin moves a coupon to a different business
+ * (operation = 'update' AND `previousDoc.business !== doc.business`), we
+ * invalidate BOTH the old AND new business tags. Without this, the old
+ * business's detail page would keep displaying the now-moved coupon until
+ * the next time someone edits the business itself.
+ *
+ * Failures are swallowed but logged: cache misses are recoverable; failing
+ * the merchant's edit on a transient cache error is not.
+ */
+const revalidateCouponTags: CollectionAfterChangeHook = async ({
+  doc,
+  previousDoc,
+  operation,
+}) => {
+  if (operation !== 'create' && operation !== 'update') return doc;
+
+  const tags = new Set<string>();
+  tags.add(directoryTag());
+
+  const newBusinessId = extractBusinessId(doc.business);
+  if (newBusinessId) tags.add(businessTag(newBusinessId));
+
+  if (previousDoc && operation === 'update') {
+    const prevBusinessId = extractBusinessId(previousDoc.business);
+    if (prevBusinessId && prevBusinessId !== newBusinessId) {
+      tags.add(businessTag(prevBusinessId));
+    }
+  }
+
+  await Promise.all(
+    Array.from(tags).map(async (tag) => {
+      try {
+        // Next 16 changed `revalidateTag` to require a 2nd `profile` argument.
+        // `'max'` is the longest cache life profile and mirrors v15 behavior:
+        // the tag is marked stale and the next request triggers
+        // stale-while-revalidate. See:
+        // https://nextjs.org/docs/app/api-reference/functions/revalidateTag
+        await revalidateTag(tag, 'max');
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error(`[Coupons.afterChange] revalidateTag('${tag}') failed`, err);
+      }
+    }),
+  );
+
+  return doc;
+};
 
 export const Coupons: CollectionConfig = {
   slug: 'coupons',
@@ -54,6 +127,7 @@ export const Coupons: CollectionConfig = {
         return data;
       },
     ],
+    afterChange: [revalidateCouponTags],
   },
   fields: [
     {
