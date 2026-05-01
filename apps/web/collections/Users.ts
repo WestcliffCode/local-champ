@@ -11,13 +11,19 @@ import type { CollectionConfig } from 'payload';
  *
  * The `business` relationship links a merchant to the single business they
  * own/operate. Admins don't need a business association.
+ *
+ * The `verified_phone` field is set ONLY by the Twilio Verify flow at
+ * `/merchant/claim/[business_id]` (Phase 3 D3). It carries the E.164 phone
+ * number that the merchant proved control of via Voice OTP (with SMS
+ * fallback), and powers the 1:1 phone-uniqueness invariant enforced
+ * server-side in the claim Server Actions.
  */
 export const Users: CollectionConfig = {
   slug: 'users',
   auth: true,
   admin: {
     useAsTitle: 'email',
-    defaultColumns: ['email', 'role', 'business'],
+    defaultColumns: ['email', 'role', 'business', 'verified_phone'],
     description: 'Merchant + admin auth accounts for the CMS.',
   },
   access: {
@@ -76,6 +82,28 @@ export const Users: CollectionConfig = {
       },
       access: {
         // Only admins can change which business a merchant is linked to.
+        update: ({ req: { user } }) =>
+          Boolean(user && (user as { role?: string }).role === 'admin'),
+      },
+    },
+    {
+      name: 'verified_phone',
+      type: 'text',
+      // Indexed so the 1:1 uniqueness lookup (Step 6 of the D3 plan) doesn't
+      // sequential-scan the users table. Non-unique because most rows will
+      // have NULL until they complete a claim, and the uniqueness check is
+      // enforced in the application layer (returns the stable error code
+      // `phone_already_claimed` rather than a raw DB error).
+      index: true,
+      admin: {
+        description:
+          'E.164 phone number verified via Twilio Voice OTP during the merchant claim flow. Set by the claim Server Action — do not edit manually unless you are clearing it.',
+      },
+      access: {
+        // Merchants must NOT be able to set this directly via UI or REST API.
+        // The Twilio claim flow uses Payload's Local API, which bypasses
+        // field-level access controls by design (privileged server path).
+        // Admins can edit via UI/API to manually clear or correct.
         update: ({ req: { user } }) =>
           Boolean(user && (user as { role?: string }).role === 'admin'),
       },
