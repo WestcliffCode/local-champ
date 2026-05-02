@@ -2,9 +2,9 @@
   "name": "localchamp",
   "private": true,
   "version": "0.0.1",
-  "description": "LocalChamp — community-first local business directory",
+  "description": "LocalChamp \u2013 community-first local business directory",
   "scripts": {
-    "prepare": "husky",
+    "prepare": "node .husky/install.mjs",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
