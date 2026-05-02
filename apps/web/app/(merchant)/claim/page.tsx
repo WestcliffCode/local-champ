@@ -47,13 +47,19 @@ function parsePageParam(raw: string | undefined): number {
  * Compose the claim-search URL for a given query + page. Centralized so
  * pagination `<Link>`s and the form submission target always agree on
  * encoding.
+ *
+ * **URL is `/claim`, not `/merchant/claim`.** Route groups (parens) don't
+ * add to the URL path — `app/(merchant)/claim/page.tsx` resolves at
+ * `/claim`. The `(merchant)` group is for layout + auth-gating only.
+ * Same convention as the existing scout routes (`(scout)/sign-in` →
+ * `/sign-in`).
  */
 function buildClaimSearchHref(q: string, page: number): string {
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (page > 1) params.set('page', String(page));
   const qs = params.toString();
-  return qs ? `/merchant/claim?${qs}` : '/merchant/claim';
+  return qs ? `/claim?${qs}` : '/claim';
 }
 
 /**
@@ -62,7 +68,7 @@ function buildClaimSearchHref(q: string, page: number): string {
  * The merchant has already authenticated (the `(merchant)/layout.tsx`
  * gate ensures a Payload session). This page lets them find their
  * business by name (or any FTS-indexed keyword), then click through to
- * Step 2 at `/merchant/claim/[business_id]` to confirm phone + verify.
+ * Step 2 at `/claim/[business_id]` to confirm phone + verify.
  *
  * **Already-claimed merchants get bounced to `/admin`.** A merchant whose
  * `business` field is already set finished the claim flow in a prior
@@ -82,17 +88,10 @@ function buildClaimSearchHref(q: string, page: number): string {
  * UX rhythm:
  *   - Empty `?q=` → form + onboarding hint, skip the DB query
  *   - With `?q=` → run search, show results in a clickable list
- *   - Each row → click-through to `/merchant/claim/[business_id]`
+ *   - Each row → click-through to `/claim/[business_id]`
  *   - Pagination matches the directory search (>= 1, 404-on-out-of-range
  *     is left to the [business_id] page since this view is a stable
  *     entry point we don't want to 404 on a typo)
- *
- * **typedRoutes assertion:** dynamic href values (template literals
- * with route params, helper-function returns) need `as Route` casts
- * under `experimental.typedRoutes` (promoted out of experimental in
- * PR #4). The public directory search uses the same pattern — see
- * `apps/web/app/(directory)/[city_slug]/search/page.tsx`. Static
- * literal hrefs (`/merchant/claim`, `/admin/login`) don't need casts.
  */
 export default async function MerchantClaimSearchPage({
   searchParams,
@@ -132,7 +131,7 @@ export default async function MerchantClaimSearchPage({
 
         <form
           method="get"
-          action="/merchant/claim"
+          action="/claim"
           className="flex items-center gap-3"
         >
           <input
@@ -169,6 +168,15 @@ export default async function MerchantClaimSearchPage({
   // -------- Run the search --------
   const result = await searchBusinessesGlobal(q, { page });
 
+  // Out-of-range page guard: a user manually setting `?page=50` on a 2-page
+  // result would otherwise see "Page 50 of 2" + an empty list, with the
+  // pagination "Previous" link pointing at another out-of-range page.
+  // Redirect to the last valid page instead. The page is a stable entry
+  // point; 404'ing on a typo would be hostile (CodeRabbit #7).
+  if (result.total > 0 && page > result.pageCount) {
+    redirect(buildClaimSearchHref(q, result.pageCount));
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <header className="mb-8">
@@ -194,7 +202,7 @@ export default async function MerchantClaimSearchPage({
 
       <form
         method="get"
-        action="/merchant/claim"
+        action="/claim"
         className="mb-8 flex items-center gap-3"
       >
         <input
@@ -217,7 +225,7 @@ export default async function MerchantClaimSearchPage({
           {result.rows.map((b) => (
             <li key={b.id}>
               <Link
-                href={`/merchant/claim/${b.id}` as Route}
+                href={`/claim/${b.id}` as Route}
                 className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-accent focus:outline-none focus-visible:bg-accent"
               >
                 <div className="min-w-0">

@@ -38,6 +38,10 @@ function maskPhone(phone: string): string {
  * Step 2 of the merchant claim flow: verify the merchant via Twilio
  * Voice OTP and link their account to the business.
  *
+ * **URL is `/claim/[business_id]`, not `/merchant/claim/[business_id]`.**
+ * Route groups (parens) don't add to URL paths. See `(merchant)/claim/page.tsx`
+ * for the explainer.
+ *
  * **Server Component shell.** This file is responsible for:
  *   - Fetching the business by id and 404'ing on miss
  *   - Re-checking auth (layout already gates anonymous; this is defense
@@ -103,7 +107,7 @@ export default async function ClaimBusinessPage({ params }: PageProps) {
           </p>
           <p className="mt-4">
             <Link
-              href="/merchant/claim"
+              href="/claim"
               className="text-foreground hover:underline"
             >
               &larr; Search for a different business
@@ -140,7 +144,7 @@ export default async function ClaimBusinessPage({ params }: PageProps) {
           </p>
           <p className="mt-4">
             <Link
-              href="/merchant/claim"
+              href="/claim"
               className="text-foreground hover:underline"
             >
               &larr; Search for a different business
@@ -172,7 +176,7 @@ export default async function ClaimBusinessPage({ params }: PageProps) {
 
       <p className="mt-8 text-xs text-muted-foreground">
         <Link
-          href="/merchant/claim"
+          href="/claim"
           className="hover:text-foreground hover:underline"
         >
           &larr; Search for a different business
