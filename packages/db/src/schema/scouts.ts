@@ -18,6 +18,8 @@ export const scouts = pgTable(
     authUserId: uuid('auth_user_id').notNull().unique(),
     email: text('email').notNull().unique(),
     fullName: text('full_name'),
+    /** Optional phone — captured at first redemption via nudge (Phase 4). */
+    phone: text('phone'),
     badgeStatus: scoutBadgeEnum('badge_status').notNull().default('none'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
