@@ -162,10 +162,9 @@ export async function claimBusinessAction(
     // Defensive E.164 check — catches pre-normalization data entered before
     // the beforeValidate hook was added to the Businesses collection.
     if (!/^\+[1-9]\d{6,14}$/.test(business.phone)) {
-      return {
-        stage: formData.get('stage') as string || 'idle',
-        error: 'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
-      };
+      return errorAtCurrentStage(
+        'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
+      );
     }
 
     const result = await startVerification(business.phone, channel);
@@ -177,13 +176,13 @@ export async function claimBusinessAction(
         return {
           stage: 'confirm',
           error:
-            'We couldn\u2019t place the call. Please try again in a moment.',
+            'We couldn’t place the call. Please try again in a moment.',
         };
       }
       return {
         stage: 'awaiting_code',
         channel: prevChannel,
-        error: 'Couldn\u2019t send the SMS either. Please try again shortly.',
+        error: 'Couldn’t send the SMS either. Please try again shortly.',
       };
     }
 
@@ -203,10 +202,9 @@ export async function claimBusinessAction(
     // Defensive E.164 check — catches pre-normalization data entered before
     // the beforeValidate hook was added to the Businesses collection.
     if (!/^\+[1-9]\d{6,14}$/.test(business.phone)) {
-      return {
-        stage: formData.get('stage') as string || 'idle',
-        error: 'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
-      };
+      return errorAtCurrentStage(
+        'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
+      );
     }
 
     const check = await checkVerification(business.phone, code);
@@ -216,7 +214,7 @@ export async function claimBusinessAction(
         channel: prevChannel,
         error:
           check.status === 'pending'
-            ? 'That code didn\u2019t match. Please double-check and try again.'
+            ? 'That code didn’t match. Please double-check and try again.'
             : 'Verification failed. Please request a new code.',
       };
     }
@@ -282,7 +280,7 @@ export async function claimBusinessAction(
         stage: 'awaiting_code',
         channel: prevChannel,
         error:
-          'Verification succeeded, but we couldn\u2019t link your account. Please contact support and reference your business name.',
+          'Verification succeeded, but we couldn’t link your account. Please contact support and reference your business name.',
       };
     }
 
