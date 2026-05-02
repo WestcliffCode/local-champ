@@ -136,6 +136,12 @@ export const Coupons: CollectionConfig = {
       relationTo: 'businesses',
       required: true,
       index: true,
+      // KNOWN DRIFT: The DB FK uses ON DELETE CASCADE (hand-curated in the
+      // initial migration). The adapter defaults to ON DELETE SET NULL for
+      // relationships. Future migrate:create runs will generate a diff
+      // wanting to switch from CASCADE to SET NULL — ignore or hand-curate
+      // that portion. CASCADE is correct: deleting a business should remove
+      // its coupons, not orphan them.
       // Field-level access: only admins can change `business` after create.
       // Combined with the beforeChange hook above, this is belt-and-suspenders
       // protection against merchants reassigning a coupon to a different business.

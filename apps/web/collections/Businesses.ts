@@ -25,6 +25,21 @@ const slugifyFromName: FieldHook = ({ value, data }) => {
 };
 
 /**
+ * Normalize phone input to E.164 format.
+ * Handles common US entry patterns: (415) 940-8737, 415-940-8737, 14159408737.
+ * Non-normalizable input passes through for the validate function to reject.
+ */
+const normalizePhoneToE164: FieldHook = ({ value }) => {
+  if (typeof value !== 'string' || value.length === 0) return value;
+  const hasPlus = value.startsWith('+');
+  const digits = value.replace(/\D/g, '');
+  if (hasPlus && digits.length >= 10) return `+${digits}`;
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  return value;
+};
+
+/**
  * Trigger Next.js ISR invalidation when a business is created or updated.
  *
  * Tag granularity:
@@ -188,12 +203,22 @@ export const Businesses: CollectionConfig = {
       admin: {
         description: 'Longitude/latitude. Stored as PostGIS geometry(Point, 4326).',
       },
+      // KNOWN DRIFT: The @payloadcms/db-postgres adapter creates point columns
+      // as geometry(Point) without SRID. Our DB has SRID 4326 (applied via
+      // hand-curated migration). Future migrate:create runs will generate a
+      // diff wanting to drop the SRID — ignore or hand-curate that portion.
     },
     {
       name: 'phone',
       type: 'text',
+      hooks: { beforeValidate: [normalizePhoneToE164] },
+      validate: (value: unknown) => {
+        if (!value || typeof value !== 'string') return true;
+        if (/^\+[1-9]\d{6,14}$/.test(value)) return true;
+        return 'Phone must be in E.164 format (e.g. +14155551234) or a recognizable US number.';
+      },
       admin: {
-        description: 'E.164 format phone number — used for Twilio Verify "Claim Business" flow.',
+        description: 'E.164 format phone number — used for Twilio Verify "Claim Business" flow. US numbers are auto-normalized (e.g. 415-940-8737 → +14159408737).',
       },
     },
     { name: 'google_place_id', type: 'text', unique: true },
