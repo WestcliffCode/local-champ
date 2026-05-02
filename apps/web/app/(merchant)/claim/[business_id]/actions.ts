@@ -208,15 +208,65 @@ export async function claimBusinessAction(
     // field-level access on `verified_phone` (admin-only) by design —
     // Local API runs as the system, which is exactly the privileged
     // server path our Architectural Decision #6 sanctions.
+    //
+    // **Defense-in-depth on the write path.** The pre-`startVerification`
+    // and pre-`checkVerification` checks above already filter out claims
+    // where the phone or business is taken — but there's a TOCTOU race
+    // between those checks and this update. Migration `20260502_022000`
+    // promoted both `users.verified_phone` and `users.business_id` to
+    // unique indexes, so concurrent claimants will see a Postgres
+    // unique-violation error here. We catch it and return the same
+    // human-readable error the application-layer check would have
+    // produced, so users see a consistent message regardless of which
+    // layer caught the duplicate.
     const payload = await getPayload({ config });
-    await payload.update({
-      collection: 'users',
-      id: user.id,
-      data: {
-        business: business.id,
-        verified_phone: business.phone,
-      },
-    });
+    try {
+      await payload.update({
+        collection: 'users',
+        id: user.id,
+        data: {
+          business: business.id,
+          verified_phone: business.phone,
+        },
+      });
+    } catch (err) {
+      // Postgres unique-violation error code is '23505'. Payload's
+      // adapter wraps it but typically preserves the code on the
+      // underlying error. Handle the two known constraints by name to
+      // give the user a precise message; fall back to a generic one
+      // for unexpected DB errors.
+      const message = err instanceof Error ? err.message : String(err);
+      const isUniqueViolation =
+        /23505|unique constraint|duplicate key/i.test(message);
+
+      if (isUniqueViolation && /verified_phone/i.test(message)) {
+        return {
+          stage: 'confirm',
+          error:
+            'This phone number is already linked to another LocalChamp account. If you believe this is in error, contact support.',
+        };
+      }
+      if (isUniqueViolation && /business_id/i.test(message)) {
+        return {
+          stage: 'confirm',
+          error:
+            'This business was just claimed by another account. Please pick a different one.',
+        };
+      }
+
+      // Unexpected error path. Verification has already been consumed
+      // upstream, so the user can't retry the same code — they'd have
+      // to start over. Make the failure mode explicit so they don't
+      // retry without realizing nothing changed server-side.
+      // eslint-disable-next-line no-console
+      console.error('[claim] payload.update failed after approval', err);
+      return {
+        stage: 'awaiting_code',
+        channel: prevChannel,
+        error:
+          'Verification succeeded, but we couldn\u2019t link your account. Please contact support and reference your business name.',
+      };
+    }
 
     redirect('/admin');
   }

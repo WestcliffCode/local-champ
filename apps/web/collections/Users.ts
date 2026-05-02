@@ -13,7 +13,7 @@ import type { CollectionConfig } from 'payload';
  * own/operate. Admins don't need a business association.
  *
  * The `verified_phone` field is set ONLY by the Twilio Verify flow at
- * `/merchant/claim/[business_id]` (Phase 3 D3). It carries the E.164 phone
+ * `/claim/[business_id]` (Phase 3 D3). It carries the E.164 phone
  * number that the merchant proved control of via Voice OTP (with SMS
  * fallback), and powers the 1:1 phone-uniqueness invariant enforced
  * server-side in the claim Server Actions.
@@ -65,6 +65,13 @@ export const Users: CollectionConfig = {
       name: 'business',
       type: 'relationship',
       relationTo: 'businesses',
+      // 1:1 enforcement at the DB level (PR #12 review fix). The
+      // application layer also checks via `findExistingBusinessClaim` in
+      // the claim Server Action, but that has a TOCTOU race window
+      // between check and update; the unique index closes it.
+      // Postgres allows multiple NULLs in a unique index, so admins
+      // (and merchants who haven't completed claim) are unaffected.
+      unique: true,
       // Server-side enforcement of the tenancy invariant: merchants MUST have
       // a linked business; admins MAY have one but don't need to.
       validate: (
@@ -89,12 +96,14 @@ export const Users: CollectionConfig = {
     {
       name: 'verified_phone',
       type: 'text',
-      // Indexed so the 1:1 uniqueness lookup (Step 6 of the D3 plan) doesn't
-      // sequential-scan the users table. Non-unique because most rows will
-      // have NULL until they complete a claim, and the uniqueness check is
-      // enforced in the application layer (returns the stable error code
-      // `phone_already_claimed` rather than a raw DB error).
-      index: true,
+      // 1:1 phone-to-merchant invariant enforced at the DB level (PR #12
+      // review fix). The application layer also checks via
+      // `findUserByVerifiedPhone` in the claim Server Action, but that
+      // has a TOCTOU race window; the unique index closes it. Postgres
+      // allows multiple NULLs in a unique index, so users without a
+      // verified phone are unaffected. (`unique: true` implies an index;
+      // no separate `index: true` needed.)
+      unique: true,
       admin: {
         description:
           'E.164 phone number verified via Twilio Voice OTP during the merchant claim flow. Set by the claim Server Action — do not edit manually unless you are clearing it.',
