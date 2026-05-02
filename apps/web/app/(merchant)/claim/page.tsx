@@ -173,8 +173,12 @@ export default async function MerchantClaimSearchPage({
   // pagination "Previous" link pointing at another out-of-range page.
   // Redirect to the last valid page instead. The page is a stable entry
   // point; 404'ing on a typo would be hostile (CodeRabbit #7).
+  //
+  // **typedRoutes assertion:** `redirect()` is strictly typed under
+  // `experimental.typedRoutes` (same as `<Link href>`). Helper-function
+  // returns need `as Route` casts.
   if (result.total > 0 && page > result.pageCount) {
-    redirect(buildClaimSearchHref(q, result.pageCount));
+    redirect(buildClaimSearchHref(q, result.pageCount) as Route);
   }
 
   return (
