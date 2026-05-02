@@ -98,6 +98,19 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     })
     .returning({ id: redemptions.id });
 
+  if (!row) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
+          <p className="mt-2 text-muted-foreground">
+            Something went wrong creating the redemption. Please try again.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   // \u2500\u2500 Generate HMAC-signed token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
