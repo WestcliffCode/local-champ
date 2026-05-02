@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { redemptionStatusEnum } from './enums';
 import { scouts } from './scouts';
 
@@ -23,6 +23,10 @@ export const redemptions = pgTable(
     /** FK to coupons.id (Payload-owned) — constraint added in Phase 1.C. */
     couponId: uuid('coupon_id').notNull(),
     status: redemptionStatusEnum('status').notNull().default('pending'),
+    /** HMAC-signed redemption token for tap-to-redeem (Phase 4). */
+    token: varchar('token'),
+    /** When the 5-minute redemption window closes. */
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -32,5 +36,6 @@ export const redemptions = pgTable(
     index('redemptions_scout_idx').on(t.scoutId),
     index('redemptions_coupon_idx').on(t.couponId),
     index('redemptions_status_idx').on(t.status),
+    uniqueIndex('redemptions_token_unique').on(t.token),
   ],
 );
