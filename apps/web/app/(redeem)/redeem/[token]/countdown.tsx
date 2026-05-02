@@ -24,7 +24,17 @@ export function RedemptionCountdown({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (secondsLeft <= 0) return;
+    if (secondsLeft <= 0) {
+      if (autoComplete && !completed) {
+        completeRedemption(redemptionId)
+          .then((result) => {
+            if (result.success) setCompleted(true);
+            else setError(result.error ?? 'Failed to complete redemption');
+          })
+          .catch(() => setError('Network error — please refresh'));
+      }
+      return;
+    }
     const timer = setInterval(() => {
       const diff = new Date(expiresAt).getTime() - Date.now();
       const remaining = Math.max(0, Math.ceil(diff / 1000));
@@ -33,18 +43,20 @@ export function RedemptionCountdown({
         clearInterval(timer);
         if (autoComplete) {
           // Self-serve: mark as completed via server action
-          completeRedemption(redemptionId).then((result) => {
-            if (result.success) {
-              setCompleted(true);
-            } else {
-              setError(result.error ?? 'Failed to complete redemption');
-            }
-          });
+          completeRedemption(redemptionId)
+            .then((result) => {
+              if (result.success) {
+                setCompleted(true);
+              } else {
+                setError(result.error ?? 'Failed to complete redemption');
+              }
+            })
+            .catch(() => setError('Network error — please refresh'));
         }
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [expiresAt, autoComplete, secondsLeft, redemptionId]);
+  }, [expiresAt, autoComplete, secondsLeft, redemptionId, completed]);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;

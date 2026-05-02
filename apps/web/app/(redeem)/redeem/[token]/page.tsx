@@ -5,7 +5,7 @@ import { verifyRedemptionToken } from '@localchamp/logic/redemption-token';
 import { RedemptionCountdown } from './countdown';
 
 /**
- * `/redeem/[token]` \u2014 countdown page.
+ * `/redeem/[token]` — countdown page.
  *
  * Server Component that:
  *   1. Verifies the HMAC-signed token
@@ -23,7 +23,7 @@ interface PageProps {
 export default async function RedeemTokenPage({ params }: PageProps) {
   const { token } = await params;
 
-  // \u2500\u2500 Verify token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Verify token ───────────────────────────────────────────────────────────
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
 
@@ -43,6 +43,9 @@ export default async function RedeemTokenPage({ params }: PageProps) {
   }
 
   if (!result.valid && result.reason === 'expired') {
+    // We need the couponId from the token to build the "Try again" link.
+    // The token payload includes it even when expired.
+    const expiredCouponId = (result as { couponId?: string }).couponId;
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center">
@@ -51,7 +54,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
             The 5-minute redemption window has closed.
           </p>
           <Link
-            href={'/redeem' as Route}
+            href={`/redeem${expiredCouponId ? `?coupon=${expiredCouponId}` : ''}` as Route}
             className="mt-6 inline-flex h-10 items-center justify-center rounded-md bg-forest-green px-6 text-sm font-semibold text-cream transition-opacity hover:opacity-90"
           >
             Try again
@@ -67,7 +70,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     { valid: true }
   >;
 
-  // \u2500\u2500 Fetch redemption row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Fetch redemption row ────────────────────────────────────────────────────
   const { redemptions, coupons, businesses } = schema;
   const [redemption] = await db
     .select({ id: redemptions.id, status: redemptions.status })
@@ -88,7 +91,16 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // \u2500\u2500 Fetch coupon + business details \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (redemption.status !== 'pending') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-2xl font-bold text-foreground">Already Redeemed</h1>
+        <p className="mt-3 text-muted-foreground">This coupon has already been redeemed.</p>
+      </div>
+    );
+  }
+
+  // ── Fetch coupon + business details ──────────────────────────────────────────
   const [coupon] = await db
     .select({
       id: coupons.id,

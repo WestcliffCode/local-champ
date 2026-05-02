@@ -14,6 +14,7 @@ import { getCurrentScout } from '@/lib/auth/scout';
  *   2. Scout must own the redemption
  *   3. Coupon's `require_confirmation` must be false (self-serve mode)
  *   4. Redemption must still be in `pending` status
+ *   5. Redemption must not have expired
  */
 export async function completeRedemption(
   redemptionId: string,
@@ -25,13 +26,14 @@ export async function completeRedemption(
 
   const { redemptions, coupons } = schema;
 
-  // \u2500\u2500 Fetch the redemption and verify ownership \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Fetch the redemption and verify ownership ─────────────────────────────
   const [redemption] = await db
     .select({
       id: redemptions.id,
       scoutId: redemptions.scoutId,
       couponId: redemptions.couponId,
       status: redemptions.status,
+      expiresAt: redemptions.expiresAt,
     })
     .from(redemptions)
     .where(eq(redemptions.id, redemptionId))
@@ -49,7 +51,11 @@ export async function completeRedemption(
     return { success: false, error: 'Redemption is not pending' };
   }
 
-  // \u2500\u2500 Check coupon's require_confirmation flag \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (redemption.expiresAt && new Date() > new Date(redemption.expiresAt)) {
+    return { success: false, error: 'Redemption has expired' };
+  }
+
+  // ── Check coupon's require_confirmation flag ───────────────────────────────
   const [coupon] = await db
     .select({ requireConfirmation: coupons.requireConfirmation })
     .from(coupons)
@@ -63,7 +69,7 @@ export async function completeRedemption(
     };
   }
 
-  // \u2500\u2500 Mark as completed \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Mark as completed ──────────────────────────────────────────────────────
   await db
     .update(redemptions)
     .set({

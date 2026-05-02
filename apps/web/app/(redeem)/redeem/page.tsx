@@ -5,7 +5,7 @@ import { createRedemptionToken } from '@localchamp/logic/redemption-token';
 import { getCurrentScout } from '@/lib/auth/scout';
 
 /**
- * `/redeem` entry point \u2014 Server Component.
+ * `/redeem` entry point — Server Component.
  *
  * Flow:
  *   1. Read `?coupon=` search param
@@ -20,6 +20,8 @@ import { getCurrentScout } from '@/lib/auth/scout';
 interface PageProps {
   searchParams: Promise<{ coupon?: string }>;
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function RedeemEntryPage({ searchParams }: PageProps) {
   const { coupon: couponId } = await searchParams;
@@ -37,13 +39,26 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // \u2500\u2500 Auth check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (!UUID_RE.test(couponId)) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground">Invalid coupon link</h1>
+          <p className="mt-2 text-muted-foreground">
+            The coupon ID is not valid. Please go back and tap Redeem on a coupon card.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // ── Auth check ───────────────────────────────────────────────────────────────
   const scout = await getCurrentScout();
   if (!scout) {
     redirect('/sign-in' as Route);
   }
 
-  // \u2500\u2500 Fetch coupon via Drizzle (Payload-owned table, introspected) \u2500\u2500\u2500
+  // ── Fetch coupon via Drizzle (Payload-owned table, introspected) ───
   const { coupons } = schema;
   const [coupon] = await db
     .select({
@@ -70,7 +85,7 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // \u2500\u2500 Duplicate check \u2014 prevent re-creating a pending redemption \u2500\u2500\u2500\u2500\u2500
+  // ── Duplicate check — prevent re-creating a pending redemption ─────
   const { redemptions } = schema;
   const [existing] = await db
     .select({ id: redemptions.id, token: redemptions.token })
@@ -84,11 +99,25 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     )
     .limit(1);
 
-  if (existing?.token) {
-    redirect(`/redeem/${existing.token}` as Route);
+  if (existing) {
+    if (existing.token) {
+      redirect(`/redeem/${existing.token}` as Route);
+    }
+    // Pending row without token (crashed previous attempt) — reuse it
+    const secret = process.env.PAYLOAD_SECRET;
+    if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
+
+    const { token, expiresAt } = createRedemptionToken(scout.id, couponId, secret);
+
+    await db
+      .update(redemptions)
+      .set({ token, expiresAt })
+      .where(eq(redemptions.id, existing.id));
+
+    redirect(`/redeem/${token}` as Route);
   }
 
-  // \u2500\u2500 Create redemption row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Create redemption row ────────────────────────────────────────────────────
   const [row] = await db
     .insert(redemptions)
     .values({
@@ -111,18 +140,18 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // \u2500\u2500 Generate HMAC-signed token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Generate HMAC-stoken ─────────────────────────────────────────────────
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
 
   const { token, expiresAt } = createRedemptionToken(scout.id, couponId, secret);
 
-  // \u2500\u2500 Attach token + expiry to the redemption row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Attach token + expiry to the redemption row ───────────────────────────
   await db
     .update(redemptions)
     .set({ token, expiresAt })
     .where(eq(redemptions.id, row.id));
 
-  // \u2500\u2500 Redirect to countdown page \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Redirect to countdown page ────────────────────────────────────────────────
   redirect(`/redeem/${token}` as Route);
 }
