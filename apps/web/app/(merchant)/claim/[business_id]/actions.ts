@@ -159,6 +159,15 @@ export async function claimBusinessAction(
     const channel: VerificationChannel =
       action === 'start_voice' ? 'call' : 'sms';
 
+    // Defensive E.164 check — catches pre-normalization data entered before
+    // the beforeValidate hook was added to the Businesses collection.
+    if (!/^\+[1-9]\d{6,14}$/.test(business.phone)) {
+      return {
+        stage: formData.get('stage') as string || 'idle',
+        error: 'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
+      };
+    }
+
     const result = await startVerification(business.phone, channel);
     if (!result.ok) {
       // Voice failure: stay at confirm so the user can retry the call
@@ -188,6 +197,15 @@ export async function claimBusinessAction(
         stage: 'awaiting_code',
         channel: prevChannel,
         error: 'Please enter the 6-digit code we sent.',
+      };
+    }
+
+    // Defensive E.164 check — catches pre-normalization data entered before
+    // the beforeValidate hook was added to the Businesses collection.
+    if (!/^\+[1-9]\d{6,14}$/.test(business.phone)) {
+      return {
+        stage: formData.get('stage') as string || 'idle',
+        error: 'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
       };
     }
 
