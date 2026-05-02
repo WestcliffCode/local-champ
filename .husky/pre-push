@@ -1,5 +1,20 @@
-# Type-check via a full build. typedRoutes: true generates strict route
-# types in .next/types/ which only exist after `next build` — a bare
-# `tsc --noEmit` can't see them and false-positives on every redirect()
-# and <Link href>. The build step generates types + checks in one pass.
-pnpm --filter @localchamp/web build
+#!/bin/sh
+
+# Pre-push type check for @localchamp/web.
+#
+# typedRoutes: true generates strict route types in .next/types/ during
+# `next build`. Those files are gitignored, so they must be generated
+# at least once after cloning. We can't run `next build` here because
+# it prerenders pages which requires a database connection.
+#
+# Strategy: if .next/types/ exists, run tsc --noEmit (fast, ~4s).
+# If not, warn and skip — no false positives on a fresh clone.
+
+if [ ! -d "apps/web/.next/types" ]; then
+  echo "⚠️  apps/web/.next/types/ not found — skipping type check."
+  echo "   Run 'pnpm --filter @localchamp/web build' once to generate route types."
+  echo "   Subsequent pushes will type-check automatically."
+  exit 0
+fi
+
+pnpm --filter @localchamp/web type-check
