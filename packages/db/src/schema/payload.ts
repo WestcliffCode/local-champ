@@ -4,7 +4,7 @@
  * These mirror the schema Payload's postgres adapter creates from the
  * collection configs in `apps/web/collections/`. They live here so Drizzle
  * can read businesses + coupons in pSEO routes with type safety, but they
- * are NOT the source of truth — Payload is.
+ * are NOT the source of truth \u2014 Payload is.
  *
  * **Resync rule:** any time `apps/web/collections/Businesses.ts` or
  * `apps/web/collections/Coupons.ts` changes (or Payload generates a new
@@ -13,7 +13,7 @@
  * for the actual column shape.
  *
  * Skipped fields that exist in Postgres but not in Drizzle:
- *   - `businesses.location` (geometry(Point, 4326)) — handled separately
+ *   - `businesses.location` (geometry(Point, 4326)) \u2014 handled separately
  *     when geofencing lands; SELECT'd as NULL through Drizzle for now.
  */
 
@@ -33,7 +33,7 @@ import {
 /**
  * `tsvector` is not a first-class Drizzle type. Define a custom type so
  * we can SELECT and reference the `businesses.search_tsv` generated column
- * in queries. Read-only on the Drizzle side — the column is always
+ * in queries. Read-only on the Drizzle side \u2014 the column is always
  * computed by the database.
  */
 const tsvector = customType<{ data: string; driverData: string }>({
@@ -72,7 +72,7 @@ export const businesses = pgTable(
     addressCity: varchar('address_city'),
     addressState: varchar('address_state'),
     addressPostalCode: varchar('address_postal_code'),
-    // location: geometry(Point, 4326) — intentionally omitted. Payload writes
+    // location: geometry(Point, 4326) \u2014 intentionally omitted. Payload writes
     // this column on its own (via @payloadcms/drizzle's geometryColumn helper).
     // Drizzle reads of `businesses` skip this column.
     phone: varchar('phone'),
@@ -81,7 +81,7 @@ export const businesses = pgTable(
     reviewCount: numeric('review_count').default('0'),
     cpsScore: numeric('cps_score').default('0'),
     localLoopScore: numeric('local_loop_score').default('0'),
-    /** Generated tsvector — created by migration 0003_cities_and_fts.sql.
+    /** Generated tsvector \u2014 created by migration 0003_cities_and_fts.sql.
      *  Read-only from Drizzle's perspective (database always computes it). */
     searchTsv: tsvector('search_tsv'),
     updatedAt: timestamp('updated_at', { withTimezone: true, precision: 3 })
@@ -92,7 +92,7 @@ export const businesses = pgTable(
       .defaultNow(),
   },
   // Index names mirror Payload's canonical migration
-  // (apps/web/migrations/20260430_035717.{ts,json}). Don't rename them — drift
+  // (apps/web/migrations/20260430_035717.{ts,json}). Don't rename them \u2014 drift
   // would force Drizzle to emit DROP/CREATE Index on every diff.
   (t) => [
     index('businesses_name_idx').on(t.name),
@@ -123,6 +123,7 @@ export const coupons = pgTable(
     discountValue: varchar('discount_value').notNull(),
     terms: varchar('terms'),
     isActive: boolean('is_active').default(true),
+    requireConfirmation: boolean('require_confirmation').default(false),
     updatedAt: timestamp('updated_at', { withTimezone: true, precision: 3 })
       .notNull()
       .defaultNow(),

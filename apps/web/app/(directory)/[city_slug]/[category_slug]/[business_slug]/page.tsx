@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 
 import {
   BreadcrumbTrail,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -66,7 +65,7 @@ export async function generateMetadata({
   if (!business) return { title: 'Not found' };
   return {
     title: business.name,
-    description: `${business.name} — local${business.addressCity ? ` in ${business.addressCity}` : ''}. Coupons, scores, and verified community details.`,
+    description: `${business.name} \u2014 local${business.addressCity ? ` in ${business.addressCity}` : ''}. Coupons, scores, and verified community details.`,
     alternates: {
       canonical: `${SITE_URL}/${city_slug}/${category_slug}/${business_slug}`,
     },
@@ -84,7 +83,7 @@ function formatAddressLine(business: {
     [business.addressCity, business.addressState].filter(Boolean).join(', '),
     business.addressPostalCode,
   ].filter((s): s is string => Boolean(s));
-  return parts.join(' · ');
+  return parts.join(' \u00b7 ');
 }
 
 export default async function BusinessDetailPage({ params }: PageProps) {
@@ -171,11 +170,11 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         <header className="mt-8">
           <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
             <span>{categoryDisplayName}</span>
-            <span aria-hidden>·</span>
+            <span aria-hidden>\u00b7</span>
             <span>{cityDisplayName}</span>
             {business.status === 'verified' && (
               <>
-                <span aria-hidden>·</span>
+                <span aria-hidden>\u00b7</span>
                 <span className="font-semibold text-forest-green">
                   Verified
                 </span>
@@ -249,7 +248,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
           </div>
           {coupons.length === 0 ? (
             <p className="mt-4 text-muted-foreground">
-              No active coupons right now. Check back — merchants add new ones
+              No active coupons right now. Check back \u2014 merchants add new ones
               regularly.
             </p>
           ) : (
@@ -280,10 +279,12 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                       </p>
                     )}
                     <div className="mt-auto pt-3">
-                      {/* Redeem CTA — wired in PR #4 (Phase 4 tap-to-redeem). */}
-                      <Button type="button" disabled aria-disabled className="w-full">
-                        Redeem (sign in coming soon)
-                      </Button>
+                      <Link
+                        href={`/redeem?coupon=${c.id}` as Route}
+                        className="inline-flex h-10 w-full items-center justify-center rounded-md bg-forest-green text-sm font-semibold text-cream transition-opacity hover:opacity-90"
+                      >
+                        Redeem
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>
@@ -323,7 +324,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   </div>
                   <div className="mt-1 font-semibold">{edge.partnerName}</div>
                   <div className="text-xs text-muted-foreground">
-                    {titleizeSlug(edge.partnerCategorySlug)} ·{' '}
+                    {titleizeSlug(edge.partnerCategorySlug)} \u00b7{' '}
                     {titleizeSlug(edge.partnerCitySlug)}
                   </div>
                 </Link>
