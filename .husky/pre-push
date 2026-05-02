@@ -1,1 +1,5 @@
-pnpm --filter @localchamp/web type-check
+# Type-check via a full build. typedRoutes: true generates strict route
+# types in .next/types/ which only exist after `next build` — a bare
+# `tsc --noEmit` can't see them and false-positives on every redirect()
+# and <Link href>. The build step generates types + checks in one pass.
+pnpm --filter @localchamp/web build
