@@ -163,11 +163,11 @@ export interface Business {
   star_rating?: number | null;
   review_count?: number | null;
   /**
-   * Community Participation Score — recomputed in afterChange (Phase 5).
+   * Community Participation Score — computed by Phase 5 hooks. Admin-only manual override.
    */
   cps_score?: number | null;
   /**
-   * +10 per verified sourcing edge. See @localchamp/logic/scoring.
+   * +10 per verified sourcing edge (see @localchamp/logic/scoring). Admin-only manual override.
    */
   local_loop_score?: number | null;
   updatedAt: string;
@@ -182,7 +182,7 @@ export interface Business {
 export interface Coupon {
   id: string;
   /**
-   * For merchants, this is automatically set to your own business and cannot be changed.
+   * For merchants, this is automatically set to your own business and cannot be changed after creation.
    */
   business: string | Business;
   title: string;
@@ -209,6 +209,10 @@ export interface User {
    * Required for merchants; leave empty for admins.
    */
   business?: (string | null) | Business;
+  /**
+   * E.164 phone number verified via Twilio Voice OTP during the merchant claim flow. Set by the claim Server Action — do not edit manually unless you are clearing it.
+   */
+  verified_phone?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -356,6 +360,7 @@ export interface CouponsSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   role?: T;
   business?: T;
+  verified_phone?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

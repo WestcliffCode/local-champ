@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import nextEnv from '@next/env';
 import { postgresAdapter } from '@payloadcms/db-postgres';
 import { lexicalEditor } from '@payloadcms/richtext-lexical';
 import { buildConfig } from 'payload';
@@ -12,6 +13,39 @@ import { Users } from './collections/Users';
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
+
+/**
+ * Load .env files BEFORE reading any process.env values.
+ *
+ * Next.js auto-loads .env.local during `next dev` / `next build` via this
+ * same `loadEnvConfig` helper. Vercel injects env vars at runtime in
+ * production, so the .env files don't exist there and `loadEnvConfig`
+ * silently no-ops.
+ *
+ * The Payload CLI (`migrate:create`, `generate:types`, etc.) spawns Node
+ * directly via tsx — it does NOT go through Next.js, so without this call,
+ * the fail-fast checks below would throw even when `.env.local` is fully
+ * populated. Calling `loadEnvConfig` mirrors Next's behavior so the CLI
+ * commands see exactly the same env vars `next dev` does.
+ *
+ * Precedence (matches Next.js):
+ *   .env.local > .env.development > .env  (in dev)
+ *   .env.production > .env                (in prod, when .env files exist)
+ *
+ * **Force dev mode (`true` as 2nd arg).** `loadEnvConfig` defaults `dev`
+ * to `process.env.NODE_ENV !== 'production'`. Payload's CLI may set
+ * NODE_ENV=production internally before this evaluates, which would skip
+ * `.env.local`. The CLI is never invoked in actual production deploys
+ * (Vercel injects env from the platform), so forcing dev mode here is
+ * always correct for the cases that matter.
+ *
+ * Default-import + destructure pattern: `@next/env` ships as CJS, so
+ * named ESM imports (`import { loadEnvConfig }`) fail under Node's strict
+ * ESM loader. Default import + destructure works for both CJS (default =
+ * module.exports object) and any future ESM build of the same shape.
+ */
+const { loadEnvConfig } = nextEnv;
+loadEnvConfig(dirname, true);
 
 /**
  * LocalChamp Payload CMS configuration.

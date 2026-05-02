@@ -1,4 +1,12 @@
-export * from './scoring';
-export * from './aeo-schemas';
-export * from './cache-tags';
-export * from './text';
+// @package @localchamp/logic
+
+export * from "./scoring";
+export * from "./aeo-schemas";
+export * from "./text";
+export {
+  directoryTag,
+  cityTag,
+  categoryTag,
+  businessTag,
+  businessSlugTag,
+} from "./cache-tags";

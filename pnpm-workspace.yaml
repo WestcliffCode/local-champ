@@ -7,6 +7,7 @@ packages:
 catalog:
   # Next.js + React (latest stable per Apr 2026)
   next: ^16.0.0
+  "@next/env": ^16.0.0
   react: ^19.0.0
   react-dom: ^19.0.0
 
@@ -40,6 +41,9 @@ catalog:
   "@payloadcms/richtext-lexical": ^3.0.0
   "@payloadcms/ui": ^3.0.0
   sharp: ^0.34.5
+
+  # Twilio Verify (Phase 3 D3 — merchant claim flow)
+  twilio: ^6.0.0
 
   # Linting
   eslint-config-next: ^16.0.0
