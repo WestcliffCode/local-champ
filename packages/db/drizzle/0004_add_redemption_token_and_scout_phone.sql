@@ -3,13 +3,18 @@
 -- Applied via Composio Supabase integration (not drizzle-kit migrator).
 -- See packages/db/README.md for the migration workflow.
 
+BEGIN;
+
 -- Redemption token columns
 ALTER TABLE "redemptions"
-  ADD COLUMN "token" varchar,
-  ADD COLUMN "expires_at" timestamptz;
+  ADD COLUMN IF NOT EXISTS "token" varchar,
+  ADD COLUMN IF NOT EXISTS "expires_at" timestamptz;
 
-CREATE UNIQUE INDEX "redemptions_token_unique" ON "redemptions" ("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "redemptions_token_unique" ON "redemptions" ("token");
 
 -- Scout phone (optional, captured at first redemption via nudge)
+-- Uses text to match the Drizzle schema definition in scouts.ts
 ALTER TABLE "scouts"
-  ADD COLUMN "phone" varchar;
+  ADD COLUMN IF NOT EXISTS "phone" text;
+
+COMMIT;

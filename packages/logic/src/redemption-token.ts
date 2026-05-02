@@ -116,9 +116,11 @@ export function verifyRedemptionToken(
   const expectedSig = sign(encoded, secret);
 
   // Timing-safe comparison to prevent timing attacks
+  const providedBuf = Buffer.from(providedSig, 'utf-8');
+  const expectedBuf = Buffer.from(expectedSig, 'utf-8');
   if (
-    providedSig.length !== expectedSig.length ||
-    !timingSafeEqual(Buffer.from(providedSig), Buffer.from(expectedSig))
+    providedBuf.length !== expectedBuf.length ||
+    !timingSafeEqual(providedBuf, expectedBuf)
   ) {
     return { valid: false, reason: 'invalid' };
   }

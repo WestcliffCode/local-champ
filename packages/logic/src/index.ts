@@ -3,7 +3,6 @@
 export * from "./scoring";
 export * from "./aeo-schemas";
 export * from "./text";
-export * from "./redemption-token";
 export {
   directoryTag,
   cityTag,
