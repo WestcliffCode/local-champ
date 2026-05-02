@@ -7,7 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // for DATABASE_URL and other secrets. The CWD-based dotenv/config import
 // can't find it because Drizzle CLI runs from packages/db/, not apps/web/.
 const envResult = config({ path: path.resolve(__dirname, '../../apps/web/.env.local') });
-if (envResult.error) {
+// Only fail on a missing .env.local when DATABASE_URL isn't already in the
+// environment (e.g. CI or Vercel inject it directly). dotenv never overrides
+// existing env vars, so when the file IS present both sources coexist safely.
+if (envResult.error && !process.env.DATABASE_URL) {
   throw new Error(
     `[drizzle.config] Failed to load apps/web/.env.local: ${envResult.error.message}\n` +
     'Hint: cp apps/web/.env.example apps/web/.env.local and fill in the credentials.',
