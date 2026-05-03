@@ -26,7 +26,7 @@ export async function completeRedemption(
 
   const { redemptions, coupons } = schema;
 
-  // ── Fetch the redemption and verify ownership ─────────────────────────────
+  // \u2500\u2500 Fetch the redemption and verify ownership \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   const [redemption] = await db
     .select({
       id: redemptions.id,
@@ -55,7 +55,7 @@ export async function completeRedemption(
     return { success: false, error: 'Redemption has expired' };
   }
 
-  // ── Check coupon's require_confirmation flag ───────────────────────────────
+  // \u2500\u2500 Check coupon's require_confirmation flag \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   const [coupon] = await db
     .select({ requireConfirmation: coupons.requireConfirmation })
     .from(coupons)
@@ -69,7 +69,7 @@ export async function completeRedemption(
     };
   }
 
-  // ── Mark as completed ──────────────────────────────────────────────────────
+  // \u2500\u2500 Mark as completed \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   await db
     .update(redemptions)
     .set({
@@ -82,6 +82,45 @@ export async function completeRedemption(
         eq(redemptions.status, 'pending'),
       ),
     );
+
+  return { success: true };
+}
+
+/**
+ * Update the scout's phone number.
+ *
+ * Called from the phone nudge card shown after a successful redemption
+ * on the countdown page. Validates E.164 format and updates the
+ * `scouts.phone` column.
+ *
+ * Guards:
+ *   1. Scout must be authenticated
+ *   2. Phone must be in E.164 format (`+` followed by 7-15 digits)
+ */
+export async function updateScoutPhone(
+  phone: string,
+): Promise<{ success: boolean; error?: string }> {
+  const scout = await getCurrentScout();
+  if (!scout) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // \u2500\u2500 Validate E.164 format \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const e164Regex = /^\+[1-9]\d{6,14}$/;
+  const sanitized = phone.replace(/[\s\-()]/g, '');
+  if (!e164Regex.test(sanitized)) {
+    return {
+      success: false,
+      error: 'Please enter a valid phone number in international format (e.g. +15551234567)',
+    };
+  }
+
+  const { scouts } = schema;
+
+  await db
+    .update(scouts)
+    .set({ phone: sanitized, updatedAt: new Date() })
+    .where(eq(scouts.id, scout.id));
 
   return { success: true };
 }
