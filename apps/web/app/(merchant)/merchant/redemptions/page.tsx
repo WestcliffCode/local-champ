@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * `/merchant/redemptions` \u2014 merchant-facing redemption confirmation queue.
+ * `/merchant/redemptions` — merchant-facing redemption confirmation queue.
  *
  * Server Component that:
  *   1. Authenticates the merchant via Payload session
@@ -35,7 +35,7 @@ export default async function MerchantRedemptionsPage() {
 
   const { redemptions, coupons, scouts } = schema;
 
-  // \u2500\u2500 Pending redemptions for this business \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Pending redemptions for this business ─────────────────────────────────
   const pendingRows = await db
     .select({
       id: redemptions.id,
@@ -56,7 +56,7 @@ export default async function MerchantRedemptionsPage() {
     )
     .orderBy(desc(redemptions.createdAt));
 
-  // \u2500\u2500 Recently completed (last 24h) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Recently completed (last 24h) ────────────────────────────────────────
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recentRows = await db
     .select({
@@ -89,7 +89,7 @@ export default async function MerchantRedemptionsPage() {
         </p>
       </header>
 
-      {/* \u2500\u2500 Pending Section \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */}
+      {/* ── Pending Section ───────────────────────────────────────────────────── */}
       <section>
         <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
           Pending confirmation
@@ -112,6 +112,7 @@ export default async function MerchantRedemptionsPage() {
                 : 0;
               const minutes = Math.floor(secondsLeft / 60);
               const seconds = secondsLeft % 60;
+              const expired = expiresAt !== null && secondsLeft === 0;
 
               return (
                 <li key={r.id} className="flex items-center justify-between gap-4 p-4">
@@ -132,7 +133,7 @@ export default async function MerchantRedemptionsPage() {
                           &middot; {minutes}:{seconds.toString().padStart(2, '0')} remaining
                         </>
                       )}
-                      {secondsLeft === 0 && expiresAt && (
+                      {expired && (
                         <>
                           {' '}
                           &middot;{' '}
@@ -149,7 +150,8 @@ export default async function MerchantRedemptionsPage() {
                   >
                     <button
                       type="submit"
-                      className="h-9 rounded-md bg-forest-green px-4 text-sm font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
+                      disabled={expired}
+                      className="h-9 rounded-md bg-forest-green px-4 text-sm font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Confirm
                     </button>
@@ -161,7 +163,7 @@ export default async function MerchantRedemptionsPage() {
         )}
       </section>
 
-      {/* \u2500\u2500 Recent Section \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */}
+      {/* ── Recent Section ────────────────────────────────────────────────────── */}
       {recentRows.length > 0 && (
         <section className="mt-10">
           <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">

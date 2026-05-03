@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 const BADGE_LABELS: Record<string, string> = {
   none: 'No badge yet',
   bronze: 'Bronze · 5 redemptions',
-  silver: 'Silver · 15 redemptions, 3 different businesses',
-  gold: 'Gold · 30 redemptions, 10 different businesses',
+  silver: 'Silver · 15 redemptions + 3 reviews',
+  gold: 'Gold · 30 redemptions + 10 reviews',
 };
 
 /**

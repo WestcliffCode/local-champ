@@ -32,7 +32,7 @@ export async function confirmRedemption(
 
   const { redemptions, coupons, scouts, reviews } = schema;
 
-  // ── Fetch the redemption ──────────────────────────────────────────────────────────────────
+  // ── Fetch the redemption ─────────────────────────────────────────────────────────────────────────────────────
   const [redemption] = await db
     .select({
       id: redemptions.id,
@@ -61,16 +61,16 @@ export async function confirmRedemption(
     .limit(1);
 
   if (!coupon || coupon.businessId !== businessId) {
-    return { success: false, error: 'Not authorized \u2014 coupon does not belong to your business' };
+    return { success: false, error: 'Not authorized — coupon does not belong to your business' };
   }
 
-  // ── Check expiry ────────────────────────────────────────────────────────────────────
+  // ── Check expiry ──────────────────────────────────────────────────────────────────────────────────
   if (redemption.expiresAt && new Date() > new Date(redemption.expiresAt)) {
     return { success: false, error: 'Redemption has expired' };
   }
 
-  // ── Mark as completed ───────────────────────────────────────────────────────────────
-  await db
+  // ── Mark as completed ─────────────────────────────────────────────────────────────────────────────────────
+  const [updated] = await db
     .update(redemptions)
     .set({
       status: 'completed',
@@ -81,7 +81,12 @@ export async function confirmRedemption(
         eq(redemptions.id, redemptionId),
         eq(redemptions.status, 'pending'),
       ),
-    );
+    )
+    .returning({ id: redemptions.id });
+
+  if (!updated) {
+    return { success: false, error: 'Redemption was already completed or no longer exists.' };
+  }
 
   // ── Badge cascade: recompute the scout's badge ────────────────────────────
   const [completedCount] = await db
@@ -104,7 +109,7 @@ export async function confirmRedemption(
     reviewsSubmitted: reviewCount?.count ?? 0,
   });
 
-  // Only update if badge changed \u2014 avoids unnecessary writes + updated_at bumps
+  // Only update if badge changed — avoids unnecessary writes + updated_at bumps
   const [currentScout] = await db
     .select({ badgeStatus: scouts.badgeStatus })
     .from(scouts)
