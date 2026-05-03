@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 const BADGE_LABELS: Record<string, string> = {
   none: 'No badge yet',
-  bronze: 'Bronze \u00b7 5 redemptions',
-  silver: 'Silver \u00b7 15 redemptions, 3 different businesses',
-  gold: 'Gold \u00b7 30 redemptions, 10 different businesses',
+  bronze: 'Bronze · 5 redemptions',
+  silver: 'Silver · 15 redemptions, 3 different businesses',
+  gold: 'Gold · 30 redemptions, 10 different businesses',
 };
 
 /**
@@ -50,10 +50,10 @@ function getBadgeProgress(currentBadge: string): {
 
 /** Map badge status to a display icon/label. */
 const BADGE_ICONS: Record<string, { icon: string; label: string; color: string }> = {
-  none: { icon: '\u25cb', label: 'No Badge', color: 'text-muted-foreground' },
-  bronze: { icon: '\u25cf', label: 'Bronze Scout', color: 'text-amber-700' },
-  silver: { icon: '\u25cf', label: 'Silver Scout', color: 'text-gray-400' },
-  gold: { icon: '\u25cf', label: 'Gold Scout', color: 'text-yellow-500' },
+  none: { icon: '○', label: 'No Badge', color: 'text-muted-foreground' },
+  bronze: { icon: '●', label: 'Bronze Scout', color: 'text-amber-700' },
+  silver: { icon: '●', label: 'Silver Scout', color: 'text-gray-400' },
+  gold: { icon: '●', label: 'Gold Scout', color: 'text-yellow-500' },
 };
 
 export default async function ScoutProfilePage() {
@@ -64,11 +64,11 @@ export default async function ScoutProfilePage() {
 
   const badgeLabel = BADGE_LABELS[scout.badgeStatus] ?? scout.badgeStatus;
   // `||` (not `??`) so a whitespace-only `fullName` (e.g. "   ") falls back to
-  // the email local-part too \u2014 `trim()` would yield `""`, and `??` only
+  // the email local-part too — `trim()` would yield `""`, and `??` only
   // short-circuits on `null`/`undefined`, so we'd otherwise render "Welcome, .".
   const greetingName = scout.fullName?.trim() || scout.email.split('@')[0];
   const progress = getBadgeProgress(scout.badgeStatus);
-  const badgeDisplay: { icon: string; label: string; color: string } = BADGE_ICONS[scout.badgeStatus] ?? BADGE_ICONS.none;
+  const badgeDisplay = BADGE_ICONS[scout.badgeStatus] ?? { icon: '○', label: 'Scout', color: 'text-muted-foreground' };
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
