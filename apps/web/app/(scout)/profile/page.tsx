@@ -68,7 +68,7 @@ export default async function ScoutProfilePage() {
   // short-circuits on `null`/`undefined`, so we'd otherwise render "Welcome, .".
   const greetingName = scout.fullName?.trim() || scout.email.split('@')[0];
   const progress = getBadgeProgress(scout.badgeStatus);
-  const badgeDisplay = BADGE_ICONS[scout.badgeStatus] ?? BADGE_ICONS.none;
+  const badgeDisplay: { icon: string; label: string; color: string } = BADGE_ICONS[scout.badgeStatus] ?? BADGE_ICONS.none;
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
