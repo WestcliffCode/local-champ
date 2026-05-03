@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 
 import {
   BreadcrumbTrail,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -280,10 +279,12 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                       </p>
                     )}
                     <div className="mt-auto pt-3">
-                      {/* Redeem CTA — wired in PR #4 (Phase 4 tap-to-redeem). */}
-                      <Button type="button" disabled aria-disabled className="w-full">
-                        Redeem (sign in coming soon)
-                      </Button>
+                      <Link
+                        href={`/redeem?coupon=${c.id}`}
+                        className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        Redeem
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>

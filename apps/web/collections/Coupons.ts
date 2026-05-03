@@ -161,7 +161,7 @@ export const Coupons: CollectionConfig = {
       type: 'text',
       required: true,
       admin: {
-        description: 'Free-form display text — e.g. "20% off", "$5 off lunch", "Free dessert".',
+        description: 'Free-form display text \u2014 e.g. "20% off", "$5 off lunch", "Free dessert".',
       },
     },
     { name: 'terms', type: 'textarea' },
@@ -170,6 +170,15 @@ export const Coupons: CollectionConfig = {
       type: 'checkbox',
       defaultValue: true,
       index: true,
+    },
+    {
+      name: 'require_confirmation',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description:
+          'When enabled, redemptions stay pending until you confirm on your device. When disabled, the coupon is redeemed automatically when the scout presents the countdown screen.',
+      },
     },
   ],
 };

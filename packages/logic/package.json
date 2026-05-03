@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./scoring": "./src/scoring.ts",
-    "./aeo-schemas": "./src/aeo-schemas.ts"
+    "./aeo-schemas": "./src/aeo-schemas.ts",
+    "./redemption-token": "./src/redemption-token.ts"
   },
   "scripts": {
     "lint": "echo 'no lint configured'",
