@@ -12,10 +12,9 @@ import { getCurrentScout } from '@/lib/auth/scout';
  *   2. Verify scout is authenticated (Supabase Auth via `getCurrentScout`)
  *   3. Fetch coupon from Drizzle to verify it exists + is active
  *   4. Check for existing pending redemption (prevent duplicates)
- *   5. Insert a new `redemptions` row (status: pending)
- *   6. Generate HMAC-signed token via `createRedemptionToken`
- *   7. Update the row with token + expiresAt
- *   8. Redirect to `/redeem/[token]`
+ *   5. Generate HMAC-signed token BEFORE inserting
+ *   6. Insert a new `redemptions` row with token + expiresAt (atomic)
+ *   7. Redirect to `/redeem/[token]`
  */
 interface PageProps {
   searchParams: Promise<{ coupon?: string }>;
@@ -52,13 +51,13 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // ── Auth check ───────────────────────────────────────────────────────────────
+  // ── Auth check ────────────────────────────────────────────────────────────────
   const scout = await getCurrentScout();
   if (!scout) {
     redirect('/sign-in' as Route);
   }
 
-  // ── Fetch coupon via Drizzle (Payload-owned table, introspected) ───
+  // ── Fetch coupon via Drizzle (Payload-owned table, introspected) ───────────
   const { coupons } = schema;
   const [coupon] = await db
     .select({
@@ -85,7 +84,7 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // ── Duplicate check — prevent re-creating a pending redemption ─────
+  // ── Duplicate check — prevent re-creating a pending redemption ───────────
   const { redemptions } = schema;
   const [existing] = await db
     .select({ id: redemptions.id, token: redemptions.token })
@@ -117,13 +116,20 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     redirect(`/redeem/${token}` as Route);
   }
 
-  // ── Create redemption row ────────────────────────────────────────────────────
+  // ── Create redemption row — generate token BEFORE insert (atomic) ──────────
+  const secret = process.env.PAYLOAD_SECRET;
+  if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
+
+  const { token, expiresAt } = createRedemptionToken(scout.id, couponId, secret);
+
   const [row] = await db
     .insert(redemptions)
     .values({
       scoutId: scout.id,
       couponId,
       status: 'pending',
+      token,
+      expiresAt,
     })
     .returning({ id: redemptions.id });
 
@@ -139,18 +145,6 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
       </main>
     );
   }
-
-  // ── Generate HMAC-stoken ─────────────────────────────────────────────────
-  const secret = process.env.PAYLOAD_SECRET;
-  if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
-
-  const { token, expiresAt } = createRedemptionToken(scout.id, couponId, secret);
-
-  // ── Attach token + expiry to the redemption row ───────────────────────────
-  await db
-    .update(redemptions)
-    .set({ token, expiresAt })
-    .where(eq(redemptions.id, row.id));
 
   // ── Redirect to countdown page ────────────────────────────────────────────────
   redirect(`/redeem/${token}` as Route);

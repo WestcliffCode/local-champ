@@ -23,7 +23,7 @@ interface PageProps {
 export default async function RedeemTokenPage({ params }: PageProps) {
   const { token } = await params;
 
-  // ── Verify token ───────────────────────────────────────────────────────────
+  // ── Verify token (signature only — ignore expiry for now) ──────────────
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
 
@@ -42,10 +42,17 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
+  // ── Query redemption row by token (before expiry check) ────────────────
+  // This lets us get couponId regardless of whether the token is expired.
+  const { redemptions, coupons, businesses } = schema;
+  const [redemption] = await db
+    .select({ id: redemptions.id, status: redemptions.status, couponId: redemptions.couponId })
+    .from(redemptions)
+    .where(eq(redemptions.token, token))
+    .limit(1);
+
   if (!result.valid && result.reason === 'expired') {
-    // We need the couponId from the token to build the "Try again" link.
-    // The token payload includes it even when expired.
-    const expiredCouponId = (result as { couponId?: string }).couponId;
+    const expiredCouponId = redemption?.couponId;
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center">
@@ -65,18 +72,10 @@ export default async function RedeemTokenPage({ params }: PageProps) {
   }
 
   // At this point result.valid === true
-  const { scoutId, couponId, expiresAt } = result as Extract<
+  const { couponId, expiresAt } = result as Extract<
     typeof result,
     { valid: true }
   >;
-
-  // ── Fetch redemption row ────────────────────────────────────────────────────
-  const { redemptions, coupons, businesses } = schema;
-  const [redemption] = await db
-    .select({ id: redemptions.id, status: redemptions.status })
-    .from(redemptions)
-    .where(eq(redemptions.token, token))
-    .limit(1);
 
   if (!redemption) {
     return (
@@ -100,7 +99,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // ── Fetch coupon + business details ──────────────────────────────────────────
+  // ── Fetch coupon + business details ────────────────────────────────────
   const [coupon] = await db
     .select({
       id: coupons.id,
@@ -113,7 +112,16 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     .where(eq(coupons.id, couponId))
     .limit(1);
 
-  const businessName = coupon?.businessId
+  if (!coupon) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-2xl font-bold text-foreground">Coupon Not Found</h1>
+        <p className="mt-3 text-muted-foreground">This coupon may have been removed from the directory.</p>
+      </div>
+    );
+  }
+
+  const businessName = coupon.businessId
     ? await db
         .select({ name: businesses.name })
         .from(businesses)
@@ -127,7 +135,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
   const signature = dotIndex !== -1 ? token.slice(dotIndex + 1) : token;
   const displayCode = signature.slice(0, 6).toUpperCase();
 
-  const autoComplete = !(coupon?.requireConfirmation ?? false);
+  const autoComplete = !(coupon.requireConfirmation ?? false);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
@@ -150,10 +158,10 @@ export default async function RedeemTokenPage({ params }: PageProps) {
           {businessName}
         </p>
         <h1 className="mt-2 text-2xl font-bold text-foreground">
-          {coupon?.title ?? 'Coupon'}
+          {coupon.title ?? 'Coupon'}
         </h1>
         <p className="mt-1 text-lg font-semibold text-forest-green">
-          {coupon?.discountValue ?? ''}
+          {coupon.discountValue ?? ''}
         </p>
       </div>
 

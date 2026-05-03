@@ -24,7 +24,9 @@ export function RedemptionCountdown({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (secondsLeft <= 0) {
+    // Handle the already-expired case before the interval starts
+    const initialDiff = new Date(expiresAt).getTime() - Date.now();
+    if (initialDiff <= 0) {
       if (autoComplete && !completed) {
         completeRedemption(redemptionId)
           .then((result) => {
@@ -35,6 +37,7 @@ export function RedemptionCountdown({
       }
       return;
     }
+
     const timer = setInterval(() => {
       const diff = new Date(expiresAt).getTime() - Date.now();
       const remaining = Math.max(0, Math.ceil(diff / 1000));
@@ -56,7 +59,7 @@ export function RedemptionCountdown({
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [expiresAt, autoComplete, secondsLeft, redemptionId, completed]);
+  }, [expiresAt, autoComplete, redemptionId]); // NO secondsLeft
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
@@ -106,7 +109,7 @@ export function RedemptionCountdown({
             ? 'Show this screen to the cashier'
             : autoComplete
               ? 'Redemption complete'
-              : 'Waiting for merchant confirmation'}
+              : 'Redemption window closed — contact the merchant'}
         </p>
       </div>
 
