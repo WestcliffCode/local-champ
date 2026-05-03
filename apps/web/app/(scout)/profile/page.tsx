@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCurrentScout } from '@/lib/auth/scout';
+import { BADGE_THRESHOLDS } from '@localchamp/logic';
 import { SignOutButton } from './sign-out-button';
 
 export const metadata: Metadata = {
@@ -14,6 +15,47 @@ const BADGE_LABELS: Record<string, string> = {
   gold: 'Gold \u00b7 30 redemptions, 10 different businesses',
 };
 
+/**
+ * Compute the next badge tier and the progress description.
+ */
+function getBadgeProgress(currentBadge: string): {
+  nextTier: string | null;
+  description: string;
+} {
+  switch (currentBadge) {
+    case 'none':
+      return {
+        nextTier: 'bronze',
+        description: `Redeem ${BADGE_THRESHOLDS.bronze.completedRedemptions} coupons to earn your Bronze badge.`,
+      };
+    case 'bronze':
+      return {
+        nextTier: 'silver',
+        description: `Reach ${BADGE_THRESHOLDS.silver.completedRedemptions} redemptions and ${BADGE_THRESHOLDS.silver.reviewsSubmitted} reviews to earn Silver.`,
+      };
+    case 'silver':
+      return {
+        nextTier: 'gold',
+        description: `Reach ${BADGE_THRESHOLDS.gold.completedRedemptions} redemptions and ${BADGE_THRESHOLDS.gold.reviewsSubmitted} reviews to earn Gold.`,
+      };
+    case 'gold':
+      return {
+        nextTier: null,
+        description: 'You have reached the highest tier. Thank you for being a LocalChamp!',
+      };
+    default:
+      return { nextTier: null, description: '' };
+  }
+}
+
+/** Map badge status to a display icon/label. */
+const BADGE_ICONS: Record<string, { icon: string; label: string; color: string }> = {
+  none: { icon: '\u25cb', label: 'No Badge', color: 'text-muted-foreground' },
+  bronze: { icon: '\u25cf', label: 'Bronze Scout', color: 'text-amber-700' },
+  silver: { icon: '\u25cf', label: 'Silver Scout', color: 'text-gray-400' },
+  gold: { icon: '\u25cf', label: 'Gold Scout', color: 'text-yellow-500' },
+};
+
 export default async function ScoutProfilePage() {
   const scout = await getCurrentScout();
   if (!scout) {
@@ -25,6 +67,8 @@ export default async function ScoutProfilePage() {
   // the email local-part too \u2014 `trim()` would yield `""`, and `??` only
   // short-circuits on `null`/`undefined`, so we'd otherwise render "Welcome, .".
   const greetingName = scout.fullName?.trim() || scout.email.split('@')[0];
+  const progress = getBadgeProgress(scout.badgeStatus);
+  const badgeDisplay = BADGE_ICONS[scout.badgeStatus] ?? BADGE_ICONS.none;
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -41,10 +85,22 @@ export default async function ScoutProfilePage() {
         <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
           Scout badge
         </h2>
-        <p className="mt-3 text-lg font-semibold text-foreground">{badgeLabel}</p>
-        {scout.badgeStatus === 'none' && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Redeem your first 5 coupons to earn your Bronze badge.
+
+        <div className="mt-4 flex items-center gap-3">
+          <span className={`text-3xl ${badgeDisplay.color}`} aria-hidden="true">
+            {badgeDisplay.icon}
+          </span>
+          <div>
+            <p className="text-lg font-semibold text-foreground">
+              {badgeDisplay.label}
+            </p>
+            <p className="text-sm text-muted-foreground">{badgeLabel}</p>
+          </div>
+        </div>
+
+        {progress.description && (
+          <p className="mt-4 text-sm text-muted-foreground">
+            {progress.description}
           </p>
         )}
       </section>
@@ -54,9 +110,9 @@ export default async function ScoutProfilePage() {
           Coming soon
         </h2>
         <ul className="space-y-1 text-sm text-muted-foreground">
-          <li>\u2014 Tap-to-redeem coupons (Phase 4)</li>
-          <li>\u2014 Redemption history</li>
-          <li>\u2014 Business reviews</li>
+          <li>&mdash; Tap-to-redeem coupons (Phase 4)</li>
+          <li>&mdash; Redemption history</li>
+          <li>&mdash; Business reviews</li>
         </ul>
       </section>
 

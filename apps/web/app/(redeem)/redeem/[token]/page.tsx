@@ -2,15 +2,17 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { db, eq, schema } from '@localchamp/db';
 import { verifyRedemptionToken } from '@localchamp/logic/redemption-token';
+import { getCurrentScout } from '@/lib/auth/scout';
 import { RedemptionCountdown } from './countdown';
 
 /**
- * `/redeem/[token]` — countdown page.
+ * `/redeem/[token]` \u2014 countdown page.
  *
  * Server Component that:
  *   1. Verifies the HMAC-signed token
  *   2. Fetches the redemption row + coupon + business details
- *   3. Renders the anti-screenshot countdown UI
+ *   3. Determines whether to show the phone nudge (scout has no phone on file)
+ *   4. Renders the anti-screenshot countdown UI
  *
  * Dual-mode behavior controlled by `coupon.require_confirmation`:
  *   - self-serve (false): countdown auto-completes via server action
@@ -23,7 +25,7 @@ interface PageProps {
 export default async function RedeemTokenPage({ params }: PageProps) {
   const { token } = await params;
 
-  // ── Verify token (signature only — ignore expiry for now) ──────────────
+  // \u2500\u2500 Verify token (signature only \u2014 ignore expiry for now) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
 
@@ -42,11 +44,11 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // ── Query redemption row by token (before expiry check) ────────────────
+  // \u2500\u2500 Query redemption row by token (before expiry check) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   // This lets us get couponId regardless of whether the token is expired.
-  const { redemptions, coupons, businesses } = schema;
+  const { redemptions, coupons, businesses, scouts } = schema;
   const [redemption] = await db
-    .select({ id: redemptions.id, status: redemptions.status, couponId: redemptions.couponId })
+    .select({ id: redemptions.id, status: redemptions.status, couponId: redemptions.couponId, scoutId: redemptions.scoutId })
     .from(redemptions)
     .where(eq(redemptions.token, token))
     .limit(1);
@@ -99,7 +101,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // ── Fetch coupon + business details ────────────────────────────────────
+  // \u2500\u2500 Fetch coupon + business details \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   const [coupon] = await db
     .select({
       id: coupons.id,
@@ -137,6 +139,20 @@ export default async function RedeemTokenPage({ params }: PageProps) {
 
   const autoComplete = !(coupon.requireConfirmation ?? false);
 
+  // \u2500\u2500 Phone nudge: check if the scout has a phone on file \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // getCurrentScout() returns the Supabase auth user mapped to the scouts
+  // table but the CurrentScout type doesn't include `phone`. Query the
+  // scouts table directly using the scoutId from the redemption row.
+  let showPhoneNudge = false;
+  if (redemption.scoutId) {
+    const [scoutRow] = await db
+      .select({ phone: scouts.phone })
+      .from(scouts)
+      .where(eq(scouts.id, redemption.scoutId))
+      .limit(1);
+    showPhoneNudge = scoutRow ? !scoutRow.phone : false;
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       {/* Anti-screenshot CSS: animated gradient makes static captures useless */}
@@ -171,6 +187,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
         displayCode={displayCode}
         autoComplete={autoComplete}
         redemptionId={redemption.id}
+        showPhoneNudge={showPhoneNudge}
       />
     </main>
   );

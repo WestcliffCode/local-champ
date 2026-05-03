@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { completeRedemption } from './actions';
+import { completeRedemption, updateScoutPhone } from './actions';
 
 interface CountdownProps {
   expiresAt: string; // ISO date string
   displayCode: string;
   autoComplete: boolean; // true for self-serve, false for require_confirmation
   redemptionId: string;
+  showPhoneNudge: boolean;
 }
 
 export function RedemptionCountdown({
@@ -15,6 +16,7 @@ export function RedemptionCountdown({
   displayCode,
   autoComplete,
   redemptionId,
+  showPhoneNudge,
 }: CountdownProps) {
   const [secondsLeft, setSecondsLeft] = useState(() => {
     const diff = new Date(expiresAt).getTime() - Date.now();
@@ -22,6 +24,11 @@ export function RedemptionCountdown({
   });
   const [completed, setCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneValue, setPhoneValue] = useState('');
+  const [phoneSaved, setPhoneSaved] = useState(false);
+  const [phoneDismissed, setPhoneDismissed] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneSaving, setPhoneSaving] = useState(false);
 
   useEffect(() => {
     // Handle the already-expired case before the interval starts
@@ -33,7 +40,7 @@ export function RedemptionCountdown({
             if (result.success) setCompleted(true);
             else setError(result.error ?? 'Failed to complete redemption');
           })
-          .catch(() => setError('Network error — please refresh'));
+          .catch(() => setError('Network error \u2014 please refresh'));
       }
       return;
     }
@@ -54,7 +61,7 @@ export function RedemptionCountdown({
                 setError(result.error ?? 'Failed to complete redemption');
               }
             })
-            .catch(() => setError('Network error — please refresh'));
+            .catch(() => setError('Network error \u2014 please refresh'));
         }
       }
     }, 1000);
@@ -65,11 +72,73 @@ export function RedemptionCountdown({
   const seconds = secondsLeft % 60;
   const progress = secondsLeft / 300; // 300 = 5 min
 
+  const handleSavePhone = async () => {
+    setPhoneError(null);
+    setPhoneSaving(true);
+    try {
+      const result = await updateScoutPhone(phoneValue);
+      if (result.success) {
+        setPhoneSaved(true);
+      } else {
+        setPhoneError(result.error ?? 'Failed to save phone number');
+      }
+    } catch {
+      setPhoneError('Network error \u2014 please try again');
+    } finally {
+      setPhoneSaving(false);
+    }
+  };
+
   if (completed) {
+    const shouldShowNudge =
+      showPhoneNudge && !phoneSaved && !phoneDismissed;
+
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="text-2xl font-bold text-forest-green">Redeemed!</div>
         <p className="text-muted-foreground">Show this screen to the cashier.</p>
+
+        {shouldShowNudge && (
+          <div className="mt-6 w-full max-w-sm rounded-lg border border-border bg-muted/30 p-5">
+            <p className="text-sm font-semibold text-foreground">
+              Add your phone number for faster redemptions next time
+            </p>
+            {phoneError && (
+              <p className="mt-2 text-xs text-red-600">{phoneError}</p>
+            )}
+            <input
+              type="tel"
+              placeholder="+1 555 123 4567"
+              value={phoneValue}
+              onChange={(e) => setPhoneValue(e.target.value)}
+              className="mt-3 h-10 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="Phone number"
+            />
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSavePhone}
+                disabled={phoneSaving || !phoneValue.trim()}
+                className="h-9 flex-1 rounded-md bg-forest-green text-sm font-semibold text-cream transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {phoneSaving ? 'Saving\u2026' : 'Save'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPhoneDismissed(true)}
+                className="h-9 flex-1 rounded-md border border-border text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phoneSaved && (
+          <p className="mt-4 text-sm text-forest-green">
+            Phone number saved. You are all set!
+          </p>
+        )}
       </div>
     );
   }
@@ -109,7 +178,7 @@ export function RedemptionCountdown({
             ? 'Show this screen to the cashier'
             : autoComplete
               ? 'Redemption complete'
-              : 'Redemption window closed — contact the merchant'}
+              : 'Redemption window closed \u2014 contact the merchant'}
         </p>
       </div>
 
