@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { db, eq, schema, sql } from '@localgem/db';
+import { alias, db, eq, schema } from '@localgem/db';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import { SourcingEdgeRow } from './sourcing-row';
 
@@ -23,8 +23,9 @@ export default async function AdminSourcingPage() {
   }
 
   const { sourcing, businesses } = schema;
+  const buyer = alias(businesses, 'buyer');
+  const seller = alias(businesses, 'seller');
 
-  // Fetch all sourcing edges with buyer and seller names using subqueries
   const edges = await db
     .select({
       id: sourcing.id,
@@ -33,10 +34,12 @@ export default async function AdminSourcingPage() {
       verified: sourcing.verified,
       createdAt: sourcing.createdAt,
       verifiedAt: sourcing.verifiedAt,
-      buyerName: sql<string>`(SELECT name FROM businesses WHERE id = ${sourcing.buyerId})`,
-      sellerName: sql<string>`(SELECT name FROM businesses WHERE id = ${sourcing.sellerId})`,
+      buyerName: buyer.name,
+      sellerName: seller.name,
     })
     .from(sourcing)
+    .leftJoin(buyer, eq(sourcing.buyerId, buyer.id))
+    .leftJoin(seller, eq(sourcing.sellerId, seller.id))
     .orderBy(sourcing.createdAt);
 
   return (

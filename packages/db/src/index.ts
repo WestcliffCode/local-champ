@@ -32,3 +32,9 @@ export {
   desc,
   sql,
 } from 'drizzle-orm';
+
+/**
+ * Table aliasing — needed when joining the same table multiple times
+ * (e.g. sourcing → buyer business + seller business).
+ */
+export { alias } from 'drizzle-orm/pg-core';
