@@ -1,7 +1,7 @@
 import type { Route } from 'next';
 import { redirect } from 'next/navigation';
-import { and, db, eq, schema } from '@localchamp/db';
-import { createRedemptionToken } from '@localchamp/logic/redemption-token';
+import { and, db, eq, schema } from '@localgem/db';
+import { createRedemptionToken } from '@localgem/logic/redemption-token';
 import { getCurrentScout } from '@/lib/auth/scout';
 
 /**
@@ -51,13 +51,13 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // ── Auth check ────────────────────────────────────────────────────────────────
+  // ── Auth check ───────────────────────────────────────────────────────────────
   const scout = await getCurrentScout();
   if (!scout) {
     redirect('/sign-in' as Route);
   }
 
-  // ── Fetch coupon via Drizzle (Payload-owned table, introspected) ───────────
+  // ── Fetch coupon via Drizzle (Payload-owned table, introspected) ─────────────────
   const { coupons } = schema;
   const [coupon] = await db
     .select({
@@ -84,7 +84,7 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // ── Duplicate check — prevent re-creating a pending redemption ───────────
+  // ── Duplicate check — prevent re-creating a pending redemption ───────────────────
   const { redemptions } = schema;
   const [existing] = await db
     .select({ id: redemptions.id, token: redemptions.token })
@@ -116,7 +116,7 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     redirect(`/redeem/${token}` as Route);
   }
 
-  // ── Create redemption row — generate token BEFORE insert (atomic) ──────────
+  // ── Create redemption row — generate token BEFORE insert (atomic) ──────────────────
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
 
@@ -146,6 +146,6 @@ export default async function RedeemEntryPage({ searchParams }: PageProps) {
     );
   }
 
-  // ── Redirect to countdown page ────────────────────────────────────────────────
+  // ── Redirect to countdown page ─────────────────────────────────────────────────────────────
   redirect(`/redeem/${token}` as Route);
 }

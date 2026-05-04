@@ -9,12 +9,12 @@ import '../globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Merchant \u00b7 LocalChamp',
-    template: '%s \u00b7 LocalChamp',
+    default: 'Merchant · LocalGem',
+    template: '%s · LocalGem',
   },
   description:
-    'Claim and manage your LocalChamp business listing. Voice OTP verification keeps merchant accounts trustworthy and 1:1.',
-  // Merchant routes are auth-gated and not SEO-targeted \u2014 no value in indexing.
+    'Claim and manage your LocalGem business listing. Voice OTP verification keeps merchant accounts trustworthy and 1:1.',
+  // Merchant routes are auth-gated and not SEO-targeted — no value in indexing.
   robots: { index: false, follow: false },
 };
 
@@ -23,31 +23,31 @@ export const metadata: Metadata = {
  *
  * **Auth gate.** Every route inside `(merchant)` requires a Payload session
  * (merchant or admin role). Anonymous requests are redirected to
- * `/admin/login`. Both roles pass through \u2014 admins occasionally need to
+ * `/admin/login`. Both roles pass through — admins occasionally need to
  * walk through the claim flow on behalf of a merchant (e.g. concierge
  * onboarding for a high-value business), and there's no harm in giving
  * them access since their UI affordances stay the same.
  *
  * The auth check happens in the layout (not in each page) so the
  * assertion lives in exactly one place. Pages inside the group can call
- * `getCurrentMerchant()` again to pull the user object \u2014 React.cache()
+ * `getCurrentMerchant()` again to pull the user object — React.cache()
  * deduplicates the Payload Local API round-trip across the layout +
  * page render in the same request.
  *
- * **Owns its own `<html><body>` shell** (per Workflow Gotcha #8 \u2014
+ * **Owns its own `<html><body>` shell** (per Workflow Gotcha #8 —
  * Payload's RootLayout renders its own document tags, so the root
  * layout has to be passthrough and each route group provides its own).
  *
  * **Always dynamic.** Unavoidable given the per-request session check
- * \u2014 but also correct, because authenticated merchant content should
+ * — but also correct, because authenticated merchant content should
  * never be cacheable. No `revalidate` directive needed; the layout's
  * own dynamic call propagates to children.
  *
  * **Visual contract is utilitarian.** A minimal sticky header shows the
- * LocalChamp wordmark (linking back to `/admin` \u2014 the merchant's home)
+ * LocalGem wordmark (linking back to `/admin` — the merchant's home)
  * and their email at the right edge. Pages provide their own headings
  * and chrome. The directory's `<DirectoryHeader>` is intentionally NOT
- * reused here \u2014 it points navigation back to the public directory,
+ * reused here — it points navigation back to the public directory,
  * which is the wrong affordance for a merchant deep in the claim flow.
  */
 export default async function MerchantLayout({
@@ -70,7 +70,7 @@ export default async function MerchantLayout({
                 href="/admin"
                 className="text-base font-semibold tracking-tight text-foreground hover:text-forest-green"
               >
-                LocalChamp Merchant
+                LocalGem Merchant
               </Link>
               <nav className="flex items-center gap-4">
                 <Link

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
-import { titleizeSlug } from '@localchamp/logic';
+import { titleizeSlug } from '@localgem/logic';
 
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import {
@@ -19,7 +19,7 @@ interface PageProps {
 export const metadata: Metadata = {
   title: 'Verify your business',
   description:
-    'Verify your business via Twilio Voice OTP to complete your LocalChamp merchant claim.',
+    'Verify your business via Twilio Voice OTP to complete your LocalGem merchant claim.',
 };
 
 /**
@@ -98,7 +98,7 @@ export default async function ClaimBusinessPage({ params }: PageProps) {
             If you believe this is your business and the existing claim is
             incorrect,{' '}
             <a
-              href="mailto:hello@localchamp.com"
+              href="mailto:hello@localgem.com"
               className="underline underline-offset-2 hover:text-foreground"
             >
               email us
@@ -134,7 +134,7 @@ export default async function ClaimBusinessPage({ params }: PageProps) {
         <div className="rounded-md border border-border bg-card px-6 py-6 text-sm text-muted-foreground">
           <p>
             <a
-              href="mailto:hello@localchamp.com"
+              href="mailto:hello@localgem.com"
               className="underline underline-offset-2 hover:text-foreground"
             >
               Email us

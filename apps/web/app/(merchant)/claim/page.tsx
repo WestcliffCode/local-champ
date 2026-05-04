@@ -2,7 +2,7 @@ import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { titleizeSlug } from '@localchamp/logic';
+import { titleizeSlug } from '@localgem/logic';
 
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import { searchBusinessesGlobal } from '@/lib/merchant-search';
@@ -10,7 +10,7 @@ import { searchBusinessesGlobal } from '@/lib/merchant-search';
 export const metadata: Metadata = {
   title: 'Claim your business',
   description:
-    'Find and claim your business listing on LocalChamp. Verified via Twilio Voice OTP.',
+    'Find and claim your business listing on LocalGem. Verified via Twilio Voice OTP.',
 };
 
 interface PageProps {
@@ -154,7 +154,7 @@ export default async function MerchantClaimSearchPage({
           Tip: search for any part of your business name. If you don&rsquo;t
           see your business, it may not be in our directory yet &mdash;{' '}
           <a
-            href="mailto:hello@localchamp.com"
+            href="mailto:hello@localgem.com"
             className="underline underline-offset-2 hover:text-foreground"
           >
             email us
@@ -253,7 +253,7 @@ export default async function MerchantClaimSearchPage({
           <p>
             Don&rsquo;t see your business?{' '}
             <a
-              href="mailto:hello@localchamp.com"
+              href="mailto:hello@localgem.com"
               className="underline underline-offset-2 hover:text-foreground"
             >
               email us

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { Route } from 'next';
 import { redirect } from 'next/navigation';
-import { and, db, eq, gt, desc, schema, sql } from '@localchamp/db';
+import { and, db, eq, gt, desc, schema, sql } from '@localgem/db';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import { confirmRedemption } from './actions';
 
@@ -35,7 +35,7 @@ export default async function MerchantRedemptionsPage() {
 
   const { redemptions, coupons, scouts } = schema;
 
-  // ── Pending redemptions for this business ─────────────────────────────────
+  // ── Pending redemptions for this business ───────────────────────────────────────
   const pendingRows = await db
     .select({
       id: redemptions.id,
@@ -56,7 +56,7 @@ export default async function MerchantRedemptionsPage() {
     )
     .orderBy(desc(redemptions.createdAt));
 
-  // ── Recently completed (last 24h) ────────────────────────────────────────
+  // ── Recently completed (last 24h) ────────────────────────────────────────────
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recentRows = await db
     .select({
@@ -89,7 +89,7 @@ export default async function MerchantRedemptionsPage() {
         </p>
       </header>
 
-      {/* ── Pending Section ───────────────────────────────────────────────────── */}
+      {/* ── Pending Section ───────────────────────────────────────────────────────── */}
       <section>
         <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
           Pending confirmation
@@ -163,7 +163,7 @@ export default async function MerchantRedemptionsPage() {
         )}
       </section>
 
-      {/* ── Recent Section ────────────────────────────────────────────────────── */}
+      {/* ── Recent Section ─────────────────────────────────────────────────────────── */}
       {recentRows.length > 0 && (
         <section className="mt-10">
           <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
