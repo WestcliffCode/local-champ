@@ -1,9 +1,11 @@
 'use server';
 
-import { and, db, eq, schema, sql } from '@localchamp/db';
-import { computeScoutBadge } from '@localchamp/logic';
+import { and, db, eq, schema } from '@localchamp/db';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
-import { recomputeBusinessCps } from '@/lib/scoring-hooks';
+import {
+  recomputeBusinessCps,
+  recomputeScoutBadge,
+} from '@/lib/scoring-hooks';
 import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
@@ -17,12 +19,9 @@ import { revalidatePath } from 'next/cache';
  *   3. Coupon must belong to the merchant's business
  *   4. Redemption must not have expired (`expiresAt > now()`)
  *
- * After completing the redemption, recomputes the scout's badge status
- * using `computeScoutBadge` from `@localchamp/logic` and updates
- * `scouts.badge_status` if the tier changed (badge cascade).
- *
- * Also schedules CPS recomputation for the merchant's business via
- * `after()` so it completes reliably in serverless environments.
+ * After completing the redemption:
+ *   - Recomputes the scout's badge via shared `recomputeScoutBadge` helper
+ *   - Schedules CPS recomputation via `after()` for serverless reliability
  */
 export async function confirmRedemption(
   redemptionId: string,
@@ -35,7 +34,7 @@ export async function confirmRedemption(
   const businessId =
     typeof user.business === 'string' ? user.business : user.business.id;
 
-  const { redemptions, coupons, scouts, reviews } = schema;
+  const { redemptions, coupons } = schema;
 
   // ── Fetch the redemption ──────────────────────────────────────────────────
   const [redemption] = await db
@@ -93,44 +92,10 @@ export async function confirmRedemption(
     return { success: false, error: 'Redemption was already completed or no longer exists.' };
   }
 
-  // ── Badge cascade: recompute the scout's badge ────────────────────────────
-  const [completedCount] = await db
-    .select({ count: sql<number>`cast(count(*) as int)` })
-    .from(redemptions)
-    .where(
-      and(
-        eq(redemptions.scoutId, redemption.scoutId),
-        eq(redemptions.status, 'completed'),
-      ),
-    );
-
-  const [reviewCount] = await db
-    .select({ count: sql<number>`cast(count(*) as int)` })
-    .from(reviews)
-    .where(eq(reviews.scoutId, redemption.scoutId));
-
-  const newBadge = computeScoutBadge({
-    completedRedemptions: completedCount?.count ?? 0,
-    reviewsSubmitted: reviewCount?.count ?? 0,
-  });
-
-  // Only update if badge changed — avoids unnecessary writes + updated_at bumps
-  const [currentScout] = await db
-    .select({ badgeStatus: scouts.badgeStatus })
-    .from(scouts)
-    .where(eq(scouts.id, redemption.scoutId))
-    .limit(1);
-
-  if (currentScout && currentScout.badgeStatus !== newBadge) {
-    await db
-      .update(scouts)
-      .set({ badgeStatus: newBadge, updatedAt: new Date() })
-      .where(eq(scouts.id, redemption.scoutId));
-  }
-
-  // ── CPS recompute: redemption count changed for this business ─────────────
-  // Use after() to guarantee the task completes even in serverless environments
-  // where the invocation terminates once the response is sent.
+  // ── Badge cascade + CPS recompute ─────────────────────────────────────────
+  // Badge recompute is awaited inline (scout might refresh profile immediately).
+  // CPS recompute fires via after() for serverless reliability.
+  await recomputeScoutBadge(redemption.scoutId);
   after(() => recomputeBusinessCps(businessId));
 
   revalidatePath('/merchant/redemptions');
