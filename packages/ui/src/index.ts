@@ -16,7 +16,7 @@ export { Badge, badgeVariants, type BadgeProps } from './components/ui/badge';
 export { Skeleton } from './components/ui/skeleton';
 export { Separator } from './components/ui/separator';
 
-// LocalChamp shared components
+// LocalGem shared components
 export {
   BusinessCard,
   type BusinessCardBusiness,

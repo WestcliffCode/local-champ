@@ -1,8 +1,8 @@
 /**
- * Side-effectful scoring hooks for LocalChamp.
+ * Side-effectful scoring hooks for LocalGem.
  *
  * These functions query the database for activity counts, call the pure
- * scoring functions from `@localchamp/logic`, and write the results back
+ * scoring functions from `@localgem/logic`, and write the results back
  * to the `businesses` table via Payload's Local API (which bypasses
  * field-level access restrictions on `cps_score` and `local_loop_score`).
  *
@@ -12,12 +12,12 @@
  * triggers `afterChange`).
  */
 
-import { and, db, eq, or, schema, sql } from '@localchamp/db';
+import { and, db, eq, or, schema, sql } from '@localgem/db';
 import {
   computeCpsScore,
   computeLocalLoopScore,
   computeScoutBadge,
-} from '@localchamp/logic';
+} from '@localgem/logic';
 import config from '@payload-config';
 import { getPayload } from 'payload';
 

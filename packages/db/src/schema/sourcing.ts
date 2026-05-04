@@ -14,7 +14,7 @@ import { sql } from 'drizzle-orm';
  * A directed edge `buyer → seller` indicating that the buyer business sources
  * goods/services from the seller business. When `verified = true`, both
  * businesses receive a +10 modifier to their `local_loop_score` (see
- * `@localchamp/logic/scoring`).
+ * `@localgem/logic/scoring`).
  *
  * `buyer_id` and `seller_id` reference `businesses.id` (Payload-owned). FK
  * constraints added in Phase 1.C.

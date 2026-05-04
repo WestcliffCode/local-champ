@@ -1,6 +1,6 @@
 'use server';
 
-import { and, db, eq, schema } from '@localchamp/db';
+import { and, db, eq, schema } from '@localgem/db';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import {
   recomputeBusinessCps,

@@ -1,6 +1,6 @@
 'use server';
 
-import { db, eq, schema } from '@localchamp/db';
+import { db, eq, schema } from '@localgem/db';
 import { getCurrentScout } from '@/lib/auth/scout';
 import {
   recomputeBusinessCps,

@@ -1,5 +1,5 @@
 {
-  "name": "@localchamp/web",
+  "name": "@localgem/web",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -31,10 +31,10 @@
     "sharp": "catalog:",
     "graphql": "^16.9.0",
     "twilio": "catalog:",
-    "@localchamp/db": "workspace:*",
-    "@localchamp/logic": "workspace:*",
-    "@localchamp/types": "workspace:*",
-    "@localchamp/ui": "workspace:*"
+    "@localgem/db": "workspace:*",
+    "@localgem/logic": "workspace:*",
+    "@localgem/types": "workspace:*",
+    "@localgem/ui": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",

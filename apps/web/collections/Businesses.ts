@@ -6,7 +6,7 @@ import {
   categoryTag,
   cityTag,
   directoryTag,
-} from '@localchamp/logic';
+} from '@localgem/logic';
 
 /**
  * Slug auto-generation: derive from `name` if not explicitly set.
@@ -118,7 +118,7 @@ export const Businesses: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'city_slug', 'category_slug', 'status', 'cps_score'],
     description:
-      'Local businesses listed in the LocalChamp directory. Each row drives a pSEO page at /[city_slug]/[category_slug]/[business_slug].',
+      'Local businesses listed in the LocalGem directory. Each row drives a pSEO page at /[city_slug]/[category_slug]/[business_slug].',
   },
   access: {
     // Public read so pSEO pages can render via the Local API.
@@ -255,7 +255,7 @@ export const Businesses: CollectionConfig = {
       },
       admin: {
         description:
-          '+10 per verified sourcing edge (see @localchamp/logic/scoring). Admin-only manual override.',
+          '+10 per verified sourcing edge (see @localgem/logic/scoring). Admin-only manual override.',
       },
     },
   ],

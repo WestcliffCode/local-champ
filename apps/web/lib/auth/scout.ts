@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { db, eq, schema } from '@localchamp/db';
+import { db, eq, schema } from '@localgem/db';
 import { createSupabaseServerClient } from '../supabase/server';
 
 /**
@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from '../supabase/server';
  *
  * Derived from the Drizzle schema via `$inferSelect` so adding a column to
  * `scouts` (e.g. `phone`, `avatarUrl`) and adding it to this `Pick` is the
- * only change required \u2014 the underlying types stay in sync.
+ * only change required — the underlying types stay in sync.
  */
 type ScoutSelect = typeof schema.scouts.$inferSelect;
 export type CurrentScout = Pick<
@@ -24,17 +24,17 @@ export type CurrentScout = Pick<
  *   - anonymous visitors (no Supabase session)
  *   - signed-in Supabase users who don't yet have a `scouts` row (e.g. a user
  *     who completed magic-link verification but the first-time profile-creation
- *     INSERT hasn't completed \u2014 see `/scout/auth/callback` route handler)
+ *     INSERT hasn't completed — see `/scout/auth/callback` route handler)
  *
  * Callers that require a guaranteed scout (`/scout/profile`, future
- * redemption-tracking pages) MUST handle the null case explicitly \u2014 typically
+ * redemption-tracking pages) MUST handle the null case explicitly — typically
  * `redirect('/scout/sign-in')`.
  *
  * **Wrapped in `React.cache()` (added in PR D2):** within a single request,
  * both `(scout)/layout.tsx` and pages inside that group call this helper.
  * Without `cache()`, each invocation runs a Supabase JWT validation + a
  * Drizzle SELECT, doubling the work. `cache()` is a request-scoped memoization
- * helper that deduplicates calls in the same render \u2014 ideal here because the
+ * helper that deduplicates calls in the same render — ideal here because the
  * scout's identity is immutable for the lifetime of a request.
  *
  * **Why getClaims() and not getUser():** `getClaims()` validates the JWT
@@ -43,7 +43,7 @@ export type CurrentScout = Pick<
  * round-trips. `getUser()` always hits the Auth server. We only need
  * `claims.sub` (the `auth.uid()`) to look up the scouts row, so the
  * local-validation path is strictly better for performance with identical
- * security properties \u2014 both return only after the JWT signature is
+ * security properties — both return only after the JWT signature is
  * verified.
  *
  * Per Supabase docs (https://supabase.com/docs/reference/javascript/auth-getclaims):
@@ -54,7 +54,7 @@ export type CurrentScout = Pick<
  * **Where the read goes:** through Drizzle, which connects via the Supabase
  * pooler service URI and bypasses RLS. That's intentional for this helper:
  *   1. The JWT was already validated by the prior `getClaims()` call
- *   2. The lookup is by the user's own `auth.uid()` \u2014 there's no cross-tenant
+ *   2. The lookup is by the user's own `auth.uid()` — there's no cross-tenant
  *      risk
  *   3. Initialising a per-request authed Postgres connection just to defer
  *      to the same RLS policy this lookup already satisfies would add latency
@@ -68,7 +68,7 @@ export const getCurrentScout = cache(async (): Promise<CurrentScout | null> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getClaims();
 
-  // No session, JWT validation failure, or missing `sub` claim \u2014 all map
+  // No session, JWT validation failure, or missing `sub` claim — all map
   // to "no signed-in scout" from the caller's perspective.
   if (error || !data?.claims?.sub) return null;
 

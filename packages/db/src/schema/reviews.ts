@@ -16,7 +16,7 @@ import { scouts } from './scouts';
  *
  * Distinct from `businesses.star_rating` and `businesses.review_count`, which
  * mirror Google Reviews aggregates. In-app reviews drive Scout Badge
- * progression (see thresholds in `@localchamp/logic/scoring`).
+ * progression (see thresholds in `@localgem/logic/scoring`).
  *
  * `business_id` references `businesses.id` (Payload-owned). FK constraint
  * added in Phase 1.C.

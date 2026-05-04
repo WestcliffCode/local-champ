@@ -48,7 +48,7 @@ const { loadEnvConfig } = nextEnv;
 loadEnvConfig(dirname, true);
 
 /**
- * LocalChamp Payload CMS configuration.
+ * LocalGem Payload CMS configuration.
  *
  * Payload owns the `businesses`, `coupons`, and `users` (merchant auth) tables.
  * The Drizzle-owned tables (`scouts`, `redemptions`, `sourcing`, `reviews`)
@@ -85,7 +85,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     meta: {
-      titleSuffix: ' · LocalChamp Admin',
+      titleSuffix: ' · LocalGem Admin',
     },
   },
   collections: [Businesses, Coupons, Users],

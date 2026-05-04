@@ -1,5 +1,5 @@
 {
-  "name": "@localchamp/logic",
+  "name": "@localgem/logic",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "test": "echo 'no tests yet'"
   },
   "dependencies": {
-    "@localchamp/types": "workspace:*",
+    "@localgem/types": "workspace:*",
     "zod": "catalog:"
   },
   "devDependencies": {
