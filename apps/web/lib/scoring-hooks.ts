@@ -13,9 +13,13 @@
  */
 
 import { and, db, eq, or, schema, sql } from '@localchamp/db';
-import { computeCpsScore } from '@localchamp/logic';
+import { computeCpsScore, computeLocalLoopScore } from '@localchamp/logic';
 import config from '@payload-config';
 import { getPayload } from 'payload';
+
+/* ---------------------------------------------------------------------------
+ * CPS (Community Participation Score)
+ * ------------------------------------------------------------------------ */
 
 /**
  * Recompute `businesses.cps_score` for a given business.
@@ -96,6 +100,60 @@ export async function recomputeBusinessCps(
     // eslint-disable-next-line no-console
     console.error(
       `[recomputeBusinessCps] Failed for business ${businessId}`,
+      err,
+    );
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Local Loop Score
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Recompute `businesses.local_loop_score` for a given business.
+ *
+ * Counts verified sourcing edges where the business is buyer OR seller,
+ * then applies the +10 modifier per edge (via `computeLocalLoopScore`).
+ *
+ * Written to `businesses.local_loop_score` via Payload Local API.
+ * ISR cache invalidation fires automatically via the Businesses afterChange
+ * hook — no manual revalidation needed.
+ *
+ * Errors are swallowed and logged — scoring failure should never
+ * break the primary action.
+ */
+export async function recomputeLocalLoopScore(
+  businessId: string,
+): Promise<void> {
+  try {
+    const { sourcing } = schema;
+
+    const [result] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(sourcing)
+      .where(
+        and(
+          eq(sourcing.verified, true),
+          or(
+            eq(sourcing.buyerId, businessId),
+            eq(sourcing.sellerId, businessId),
+          ),
+        ),
+      );
+
+    const localLoopScore = computeLocalLoopScore(result?.count ?? 0);
+
+    const payload = await getPayload({ config });
+    await payload.update({
+      collection: 'businesses',
+      id: businessId,
+      data: { local_loop_score: localLoopScore },
+      depth: 0,
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[recomputeLocalLoopScore] Failed for business ${businessId}`,
       err,
     );
   }
