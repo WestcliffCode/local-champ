@@ -6,7 +6,7 @@ export interface DirectoryHeaderProps {
    * Optional auth-aware slot rendered at the right edge of the nav.
    *
    * Layouts pass a Client Component (typically `<ScoutAuthBadge />`) here so
-   * the static layout shell doesn't depend on cookies / dynamic APIs \u2014 the
+   * the static layout shell doesn't depend on cookies / dynamic APIs — the
    * (directory) group MUST stay statically renderable for ISR caching, so we
    * push auth state lookup into a Client Component that hydrates after the
    * initial HTML response.
@@ -16,18 +16,18 @@ export interface DirectoryHeaderProps {
 
 /**
  * The shared sticky header used by both the public directory route group
- * and the scout route group. Visually identical across both contexts \u2014 the
+ * and the scout route group. Visually identical across both contexts — the
  * only thing that varies is the auth badge slot at the right edge of the
  * nav.
  *
  * **Stays as a Server Component on purpose.** All children render statically
  * (the `<Link>` elements from `next/link` are SSR-safe). Auth-driven state
  * lives in the `authBadge` slot, which callers populate with whatever
- * Client Component they want \u2014 keeping this header pure and reusable.
+ * Client Component they want — keeping this header pure and reusable.
  *
- * Lives at `apps/web/components/` rather than `@localchamp/ui` because it
+ * Lives at `apps/web/components/` rather than `@localgem/ui` because it
  * imports `next/link`, and the workspace UI package is intentionally
- * framework-agnostic (no `next` dependency \u2014 see packages/ui/package.json).
+ * framework-agnostic (no `next` dependency — see packages/ui/package.json).
  */
 export function DirectoryHeader({ authBadge }: DirectoryHeaderProps) {
   return (
@@ -37,7 +37,7 @@ export function DirectoryHeader({ authBadge }: DirectoryHeaderProps) {
           href="/"
           className="text-base font-semibold tracking-tight text-foreground hover:text-forest-green"
         >
-          LocalChamp
+          LocalGem
         </Link>
         <nav className="flex items-center gap-6 text-sm text-muted-foreground">
           <Link href="/" className="transition-colors hover:text-foreground">

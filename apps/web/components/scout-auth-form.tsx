@@ -1,14 +1,14 @@
 'use client';
 
 import { useActionState } from 'react';
-import { Button, Input } from '@localchamp/ui';
+import { Button, Input } from '@localgem/ui';
 import { signInWithMagicLink, type SignInState } from '@/lib/auth/actions';
 
 const INITIAL_STATE: SignInState = { status: 'idle' };
 
 export interface ScoutAuthFormProps {
   /**
-   * Drives copy. Functionally `sign-in` and `sign-up` are identical \u2014
+   * Drives copy. Functionally `sign-in` and `sign-up` are identical —
    * Supabase's `signInWithOtp` auto-creates the user if they don't exist.
    * The mode just changes button label and confirmation copy.
    */
@@ -20,9 +20,9 @@ export interface ScoutAuthFormProps {
  *
  * **Three render states**, driven by the Server Action's return value
  * (`SignInState`):
- *   - `idle`     \u2014 show the email input + submit button
- *   - `sent`     \u2014 show "Check your email" confirmation
- *   - `error`    \u2014 show the email input + an inline error message
+ *   - `idle`     — show the email input + submit button
+ *   - `sent`     — show "Check your email" confirmation
+ *   - `error`    — show the email input + an inline error message
  *
  * **Why a Client Component:** `useActionState` is a client-only hook. The
  * page wrapper around this form is a Server Component that renders
@@ -30,14 +30,14 @@ export interface ScoutAuthFormProps {
  * bit here.
  *
  * **No client-side email validation beyond `<input type="email" required>`**
- * \u2014 the Server Action does a stricter check (must contain `@` and `.`)
+ * — the Server Action does a stricter check (must contain `@` and `.`)
  * before calling Supabase, and Supabase itself rejects malformed emails
  * server-side. Layered validation, but the user only sees the
  * deepest-layer error message.
  *
  * **Pending state:** `useActionState`'s third return value is a boolean that
  * tracks whether the action is running. We disable the submit button + flip
- * its label to "Sending\u2026" so the user gets immediate feedback during the
+ * its label to "Sending…" so the user gets immediate feedback during the
  * Supabase round-trip.
  */
 export function ScoutAuthForm({ mode }: ScoutAuthFormProps) {
@@ -60,7 +60,7 @@ export function ScoutAuthForm({ mode }: ScoutAuthFormProps) {
             : ' Click it to sign in.'}
         </p>
         <p className="mt-4 text-xs text-muted-foreground">
-          The link expires in an hour. Didn\u2019t get it? Check spam, or refresh
+          The link expires in an hour. Didn’t get it? Check spam, or refresh
           this page to send another.
         </p>
       </div>
@@ -68,7 +68,7 @@ export function ScoutAuthForm({ mode }: ScoutAuthFormProps) {
   }
 
   return (
-    // No `noValidate` \u2014 we WANT the browser's native checks for `type="email"`
+    // No `noValidate` — we WANT the browser's native checks for `type="email"`
     // and `required` to fire. They give immediate feedback before any
     // round-trip. The Server Action does a stricter check (must contain `@`
     // AND `.`) as a backstop for browsers with lenient email validation, but
@@ -104,7 +104,7 @@ export function ScoutAuthForm({ mode }: ScoutAuthFormProps) {
       )}
       <Button type="submit" disabled={pending} className="w-full">
         {pending
-          ? 'Sending\u2026'
+          ? 'Sending…'
           : mode === 'sign-up'
             ? 'Create my account'
             : 'Send magic link'}

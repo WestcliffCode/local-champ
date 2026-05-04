@@ -12,9 +12,9 @@ import type { ScoutBadge } from '@localgem/types';
 
 export type { ScoutBadge };
 
-/* -------------------------------------------------------------------------------------
+/* -----------------------------------------------------------------------------------
  * Scout Badge
- * --------------------------------------------------------------------------------- */
+ * -------------------------------------------------------------------------------- */
 
 export interface ScoutStats {
   completedRedemptions: number;
@@ -25,7 +25,7 @@ export interface ScoutStats {
  * Initial Scout Badge thresholds. Review with product before launch.
  * Gold and silver require BOTH redemptions AND reviews; bronze is redemption-only.
  */
-export const BAGGE_THRESHOLDS = {
+export const BADGE_THRESHOLDS = {
   bronze: { completedRedemptions: 5, reviewsSubmitted: 0 },
   silver: { completedRedemptions: 15, reviewsSubmitted: 3 },
   gold: { completedRedemptions: 30, reviewsSubmitted: 10 },
@@ -52,9 +52,9 @@ export function computeScoutBadge(stats: ScoutStats): ScoutBadge {
   return 'none';
 }
 
-/* -------------------------------------------------------------------------------------
+/* -----------------------------------------------------------------------------------
  * Local Loop
- * ----------------------------------------------------------------------------------- */
+ * ------------------------------------------------------------------------------- */
 
 export const LOCAL_LOOP_MODIFIER = 10;
 
@@ -66,9 +66,9 @@ export function computeLocalLoopScore(verifiedSourcingCount: number): number {
   return verifiedSourcingCount * LOCAL_LOOP_MODIFIER;
 }
 
-/* ---------------------------------------------------------------------------------------
+/* ------------------------------------------------------------------------------------
  * Community Participation Score (CPS)
- * ---------------------------------------------------------------------------------- */
+ * ------------------------------------------------------------------------------- */
 
 export interface CpsInput {
   redemptionCount: number;
