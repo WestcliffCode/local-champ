@@ -1,8 +1,9 @@
 'use server';
 
-import { and, db, eq, gt, schema, sql } from '@localchamp/db';
+import { and, db, eq, schema, sql } from '@localchamp/db';
 import { computeScoutBadge } from '@localchamp/logic';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
+import { recomputeBusinessCps } from '@/lib/scoring-hooks';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -18,6 +19,9 @@ import { revalidatePath } from 'next/cache';
  * After completing the redemption, recomputes the scout's badge status
  * using `computeScoutBadge` from `@localchamp/logic` and updates
  * `scouts.badge_status` if the tier changed (badge cascade).
+ *
+ * Also triggers CPS recomputation for the merchant's business since
+ * the completed redemption count has changed.
  */
 export async function confirmRedemption(
   redemptionId: string,
@@ -32,7 +36,7 @@ export async function confirmRedemption(
 
   const { redemptions, coupons, scouts, reviews } = schema;
 
-  // ── Fetch the redemption ─────────────────────────────────────────────────────────────────────────────────────
+  // ── Fetch the redemption ──────────────────────────────────────────────────
   const [redemption] = await db
     .select({
       id: redemptions.id,
@@ -64,12 +68,12 @@ export async function confirmRedemption(
     return { success: false, error: 'Not authorized — coupon does not belong to your business' };
   }
 
-  // ── Check expiry ──────────────────────────────────────────────────────────────────────────────────
+  // ── Check expiry ──────────────────────────────────────────────────────────
   if (redemption.expiresAt && new Date() > new Date(redemption.expiresAt)) {
     return { success: false, error: 'Redemption has expired' };
   }
 
-  // ── Mark as completed ─────────────────────────────────────────────────────────────────────────────────────
+  // ── Mark as completed ─────────────────────────────────────────────────────
   const [updated] = await db
     .update(redemptions)
     .set({
@@ -122,6 +126,11 @@ export async function confirmRedemption(
       .set({ badgeStatus: newBadge, updatedAt: new Date() })
       .where(eq(scouts.id, redemption.scoutId));
   }
+
+  // ── CPS recompute: redemption count changed for this business ─────────────
+  // Fire-and-forget — scoring failure should not break the redemption flow.
+  // recomputeBusinessCps already swallows errors internally.
+  void recomputeBusinessCps(businessId);
 
   revalidatePath('/merchant/redemptions');
 
