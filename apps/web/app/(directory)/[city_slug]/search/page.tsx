@@ -6,13 +6,13 @@ import {
   BreadcrumbTrail,
   BusinessCard,
   DirectoryHero,
-} from '@localchamp/ui';
-import { breadcrumbJsonLd, stringifyJsonLd } from '@localchamp/logic';
+} from '@localgem/ui';
+import { breadcrumbJsonLd, stringifyJsonLd } from '@localgem/logic';
 
 import { getCityBySlug, searchBusinessesInCity } from '@/lib/queries';
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-champ.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-gem.vercel.app';
 
 interface PageProps {
   params: Promise<{ city_slug: string }>;

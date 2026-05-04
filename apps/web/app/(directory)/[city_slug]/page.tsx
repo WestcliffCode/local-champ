@@ -6,12 +6,12 @@ import {
   BreadcrumbTrail,
   BusinessCard,
   DirectoryHero,
-} from '@localchamp/ui';
+} from '@localgem/ui';
 import {
   breadcrumbJsonLd,
   itemListJsonLd,
   stringifyJsonLd,
-} from '@localchamp/logic';
+} from '@localgem/logic';
 
 import {
   getCategoriesForCity,
@@ -21,7 +21,7 @@ import {
 } from '@/lib/queries';
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-champ.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-gem.vercel.app';
 
 export const revalidate = 3600;
 

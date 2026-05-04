@@ -14,13 +14,13 @@ import {
   Separator,
   Star,
   Tag,
-} from '@localchamp/ui';
+} from '@localgem/ui';
 import {
   breadcrumbJsonLd,
   localBusinessJsonLd,
   stringifyJsonLd,
   titleizeSlug,
-} from '@localchamp/logic';
+} from '@localgem/logic';
 
 import {
   getBusinessBySlug,
@@ -31,7 +31,7 @@ import {
 } from '@/lib/queries';
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-champ.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-gem.vercel.app';
 
 export const revalidate = 3600;
 /**

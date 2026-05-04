@@ -5,8 +5,8 @@ import '../globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'LocalChamp Directory',
-    template: '%s \u00b7 LocalChamp',
+    default: 'LocalGem Directory',
+    template: '%s · LocalGem',
   },
   description:
     'Discover and champion the best local businesses in your community.',
@@ -15,16 +15,16 @@ export const metadata: Metadata = {
 /**
  * Directory route group layout.
  *
- * Owns its own `<html><body>` shell (the canonical Payload + Next pattern \u2014
+ * Owns its own `<html><body>` shell (the canonical Payload + Next pattern —
  * see Workflow Gotcha #8). Visually denser than the marketing-first
- * (frontend) layout: a sticky utility header keeps the LocalChamp wordmark
+ * (frontend) layout: a sticky utility header keeps the LocalGem wordmark
  * in view as users browse listings, while the body stays unboxed so each
  * page can compose its own hero / breadcrumb / content rhythm.
  *
  * **D2 refactor (2026-04-30):** the inline header markup was extracted to
  * `<DirectoryHeader>` (`apps/web/components/directory-header.tsx`) so the
  * (scout) route group can reuse the same shell. Auth state lives in the
- * `<ScoutAuthBadge>` Client Component slot \u2014 critical for keeping this
+ * `<ScoutAuthBadge>` Client Component slot — critical for keeping this
  * layout statically renderable. If we called `getCurrentScout()` here,
  * the entire group would flip to dynamic rendering and defeat the ISR
  * caching strategy that PR #6 + #7 set up for the directory pages.

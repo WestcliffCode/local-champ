@@ -2,13 +2,13 @@ import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { BreadcrumbTrail, BusinessCard, DirectoryHero } from '@localchamp/ui';
+import { BreadcrumbTrail, BusinessCard, DirectoryHero } from '@localgem/ui';
 import {
   breadcrumbJsonLd,
   itemListJsonLd,
   stringifyJsonLd,
   titleizeSlug,
-} from '@localchamp/logic';
+} from '@localgem/logic';
 
 import {
   getBusinessesByCategory,
@@ -18,7 +18,7 @@ import {
 } from '@/lib/queries';
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-champ.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-gem.vercel.app';
 
 export const revalidate = 3600;
 
