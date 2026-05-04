@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Pre-push type check for @localchamp/web.
+# Pre-push type check for @localgem/web.
 #
 # typedRoutes: true generates strict route types in .next/types/ during
 # `next build`. Those files are gitignored, so they must be generated
@@ -12,9 +12,9 @@
 
 if [ ! -d "apps/web/.next/types" ]; then
   echo "⚠️  apps/web/.next/types/ not found — skipping type check."
-  echo "   Run 'pnpm --filter @localchamp/web build' once to generate route types."
+  echo "   Run 'pnpm --filter @localgem/web build' once to generate route types."
   echo "   Subsequent pushes will type-check automatically."
   exit 0
 fi
 
-pnpm --filter @localchamp/web type-check
+pnpm --filter @localgem/web type-check
