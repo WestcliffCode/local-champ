@@ -20,7 +20,7 @@ import { getPayload } from 'payload';
 /**
  * Recompute `businesses.cps_score` for a given business.
  *
- * Queries:
+ * Queries (run in parallel via Promise.all):
  *   1. Completed redemptions (via coupons → redemptions join)
  *   2. Reviews for this business
  *   3. Verified sourcing edges (buyer or seller)
@@ -38,37 +38,42 @@ export async function recomputeBusinessCps(
   try {
     const { redemptions, coupons, reviews, sourcing } = schema;
 
-    // ── Count completed redemptions for coupons belonging to this business ──
-    const [redemptionResult] = await db
-      .select({ count: sql<number>`cast(count(*) as int)` })
-      .from(redemptions)
-      .innerJoin(coupons, eq(redemptions.couponId, coupons.id))
-      .where(
-        and(
-          eq(coupons.businessId, businessId),
-          eq(redemptions.status, 'completed'),
-        ),
-      );
-
-    // ── Count reviews for this business ─────────────────────────────────────
-    const [reviewResult] = await db
-      .select({ count: sql<number>`cast(count(*) as int)` })
-      .from(reviews)
-      .where(eq(reviews.businessId, businessId));
-
-    // ── Count verified sourcing edges (buyer or seller) ─────────────────────
-    const [sourcingResult] = await db
-      .select({ count: sql<number>`cast(count(*) as int)` })
-      .from(sourcing)
-      .where(
-        and(
-          eq(sourcing.verified, true),
-          or(
-            eq(sourcing.buyerId, businessId),
-            eq(sourcing.sellerId, businessId),
+    // Run all three independent count queries in parallel
+    const [
+      [redemptionResult],
+      [reviewResult],
+      [sourcingResult],
+    ] = await Promise.all([
+      // ── Completed redemptions for coupons belonging to this business ──────
+      db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(redemptions)
+        .innerJoin(coupons, eq(redemptions.couponId, coupons.id))
+        .where(
+          and(
+            eq(coupons.businessId, businessId),
+            eq(redemptions.status, 'completed'),
           ),
         ),
-      );
+      // ── Reviews for this business ──────────────────────────────────────────
+      db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(reviews)
+        .where(eq(reviews.businessId, businessId)),
+      // ── Verified sourcing edges (buyer or seller) ──────────────────────────
+      db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(sourcing)
+        .where(
+          and(
+            eq(sourcing.verified, true),
+            or(
+              eq(sourcing.buyerId, businessId),
+              eq(sourcing.sellerId, businessId),
+            ),
+          ),
+        ),
+    ]);
 
     const cpsScore = computeCpsScore({
       redemptionCount: redemptionResult?.count ?? 0,
@@ -77,6 +82,7 @@ export async function recomputeBusinessCps(
     });
 
     // Write via Payload Local API — bypasses field-level access on cps_score.
+    // depth: 0 skips relation population since we discard the returned doc.
     // This also triggers `revalidateBusinessTags` via the Businesses afterChange
     // hook, invalidating ISR caches for affected directory pages.
     const payload = await getPayload({ config });
@@ -84,6 +90,7 @@ export async function recomputeBusinessCps(
       collection: 'businesses',
       id: businessId,
       data: { cps_score: cpsScore },
+      depth: 0,
     });
   } catch (err) {
     // eslint-disable-next-line no-console

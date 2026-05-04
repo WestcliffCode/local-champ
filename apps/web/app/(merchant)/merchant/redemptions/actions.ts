@@ -4,6 +4,7 @@ import { and, db, eq, schema, sql } from '@localchamp/db';
 import { computeScoutBadge } from '@localchamp/logic';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import { recomputeBusinessCps } from '@/lib/scoring-hooks';
+import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -20,8 +21,8 @@ import { revalidatePath } from 'next/cache';
  * using `computeScoutBadge` from `@localchamp/logic` and updates
  * `scouts.badge_status` if the tier changed (badge cascade).
  *
- * Also triggers CPS recomputation for the merchant's business since
- * the completed redemption count has changed.
+ * Also schedules CPS recomputation for the merchant's business via
+ * `after()` so it completes reliably in serverless environments.
  */
 export async function confirmRedemption(
   redemptionId: string,
@@ -128,9 +129,9 @@ export async function confirmRedemption(
   }
 
   // ── CPS recompute: redemption count changed for this business ─────────────
-  // Fire-and-forget — scoring failure should not break the redemption flow.
-  // recomputeBusinessCps already swallows errors internally.
-  void recomputeBusinessCps(businessId);
+  // Use after() to guarantee the task completes even in serverless environments
+  // where the invocation terminates once the response is sent.
+  after(() => recomputeBusinessCps(businessId));
 
   revalidatePath('/merchant/redemptions');
 
