@@ -1,5 +1,5 @@
 /**
- * Scoring logic for LocalChamp.
+ * Scoring logic for LocalGem.
  *
  * Three independent score families — all pure functions so they can be reused
  * server-side (Drizzle/Payload hooks) and client-side (preview UI):
@@ -8,7 +8,7 @@
  *   3. badge_status     — per scout; gamified tier from redemption + review thresholds
  */
 
-import type { ScoutBadge } from '@localchamp/types';
+import type { ScoutBadge } from '@localgem/types';
 
 export type { ScoutBadge };
 

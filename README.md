@@ -1,4 +1,4 @@
-# LocalChamp
+# LocalGem
 
 Community-first local business directory with merchant verification, tap-to-redeem coupons, and Local Loop community scoring.
 

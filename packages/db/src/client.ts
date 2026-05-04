@@ -17,7 +17,7 @@ const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
   throw new Error(
-    '[@localchamp/db] DATABASE_URL is not set — copy .env.example to .env.local and fill in Supabase credentials.',
+    '[@localgem/db] DATABASE_URL is not set — copy .env.example to .env.local and fill in Supabase credentials.',
   );
 }
 

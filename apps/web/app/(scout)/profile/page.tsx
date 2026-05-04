@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCurrentScout } from '@/lib/auth/scout';
-import { BADGE_THRESHOLDS } from '@localchamp/logic';
+import { BADGE_THRESHOLDS } from '@localgem/logic';
 import { SignOutButton } from './sign-out-button';
 
 export const metadata: Metadata = {
@@ -41,7 +41,7 @@ function getBadgeProgress(currentBadge: string): {
     case 'gold':
       return {
         nextTier: null,
-        description: 'You have reached the highest tier. Thank you for being a LocalChamp!',
+        description: 'You have reached the highest tier. Thank you for being a LocalGem!',
       };
     default:
       return { nextTier: null, description: '' };

@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript interfaces for LocalChamp.
+ * Shared TypeScript interfaces for LocalGem.
  *
  * Phase 1 expands these by introspecting Drizzle schemas — the hand-written
  * types here are temporary and will be replaced with `InferSelectModel<typeof ...>`.

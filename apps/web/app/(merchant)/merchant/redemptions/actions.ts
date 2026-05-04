@@ -1,6 +1,6 @@
 'use server';
 
-import { and, db, eq, schema } from '@localchamp/db';
+import { and, db, eq, schema } from '@localgem/db';
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 import {
   recomputeBusinessCps,
@@ -36,7 +36,7 @@ export async function confirmRedemption(
 
   const { redemptions, coupons } = schema;
 
-  // ── Fetch the redemption ──────────────────────────────────────────────────
+  // ── Fetch the redemption ────────────────────────────────────────────
   const [redemption] = await db
     .select({
       id: redemptions.id,
@@ -57,7 +57,7 @@ export async function confirmRedemption(
     return { success: false, error: 'Redemption is not pending' };
   }
 
-  // ── Verify the coupon belongs to this merchant's business ─────────────────
+  // ── Verify the coupon belongs to this merchant's business ────────────────────
   const [coupon] = await db
     .select({ id: coupons.id, businessId: coupons.businessId })
     .from(coupons)
@@ -68,12 +68,12 @@ export async function confirmRedemption(
     return { success: false, error: 'Not authorized — coupon does not belong to your business' };
   }
 
-  // ── Check expiry ──────────────────────────────────────────────────────────
+  // ── Check expiry ─────────────────────────────────────────────────────────
   if (redemption.expiresAt && new Date() > new Date(redemption.expiresAt)) {
     return { success: false, error: 'Redemption has expired' };
   }
 
-  // ── Mark as completed ─────────────────────────────────────────────────────
+  // ── Mark as completed ────────────────────────────────────────────────────────────
   const [updated] = await db
     .update(redemptions)
     .set({
@@ -92,7 +92,7 @@ export async function confirmRedemption(
     return { success: false, error: 'Redemption was already completed or no longer exists.' };
   }
 
-  // ── Badge cascade + CPS recompute ─────────────────────────────────────────
+  // ── Badge cascade + CPS recompute ───────────────────────────────────────────────────
   // Badge recompute is awaited inline (scout might refresh profile immediately).
   // CPS recompute fires via after() for serverless reliability.
   await recomputeScoutBadge(redemption.scoutId);

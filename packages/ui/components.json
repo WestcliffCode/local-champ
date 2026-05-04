@@ -11,11 +11,11 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@localchamp/ui/components",
-    "utils": "@localchamp/ui/utils/cn",
-    "ui": "@localchamp/ui/components",
-    "lib": "@localchamp/ui",
-    "hooks": "@localchamp/ui/hooks"
+    "components": "@localgem/ui/components",
+    "utils": "@localgem/ui/utils/cn",
+    "ui": "@localgem/ui/components",
+    "lib": "@localgem/ui",
+    "hooks": "@localgem/ui/hooks"
   },
   "iconLibrary": "lucide"
 }

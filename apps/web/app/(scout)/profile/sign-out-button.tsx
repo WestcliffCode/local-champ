@@ -1,10 +1,10 @@
-import { Button } from '@localchamp/ui';
+import { Button } from '@localgem/ui';
 import { signOut } from '@/lib/auth/actions';
 
 /**
  * Sign-out button as a Server Component with a Server Action form action.
  *
- * No client interactivity required \u2014 form submit calls the server action,
+ * No client interactivity required — form submit calls the server action,
  * which clears Supabase cookies via `@supabase/ssr` and then `redirect('/')`.
  * Next translates the redirect into a 303 response and the browser follows.
  *

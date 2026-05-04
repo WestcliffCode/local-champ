@@ -7,7 +7,7 @@ import { getCurrentScout } from '@/lib/auth/scout';
 export const metadata: Metadata = {
   title: 'Sign in',
   description:
-    'Sign in to your LocalChamp Scout account with a magic link \u2014 no password required.',
+    'Sign in to your LocalGem Scout account with a magic link — no password required.',
 };
 
 export default async function SignInPage() {
@@ -33,7 +33,7 @@ export default async function SignInPage() {
       </div>
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
-        New to LocalChamp?{' '}
+        New to LocalGem?{' '}
         <Link
           href="/scout/sign-up"
           className="font-medium text-foreground underline underline-offset-2 hover:text-forest-green"

@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache';
-import { asc, db, desc, schema, sql } from '@localchamp/db';
+import { asc, db, desc, schema, sql } from '@localgem/db';
 
-import { directoryTag } from '@localchamp/logic';
+import { directoryTag } from '@localgem/logic';
 
 const { businesses } = schema;
 

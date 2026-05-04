@@ -113,16 +113,16 @@ importers:
 
   apps/web:
     dependencies:
-      '@localchamp/db':
+      '@localgem/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@localchamp/logic':
+      '@localgem/logic':
         specifier: workspace:*
         version: link:../../packages/logic
-      '@localchamp/types':
+      '@localgem/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@localchamp/ui':
+      '@localgem/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@next/env':
@@ -226,7 +226,7 @@ importers:
 
   packages/logic:
     dependencies:
-      '@localchamp/types':
+      '@localgem/types':
         specifier: workspace:*
         version: link:../types
       zod:

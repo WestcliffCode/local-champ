@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { db, schema } from '@localchamp/db';
+import { db, schema } from '@localgem/db';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
@@ -12,23 +12,23 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  *
  * **Flow:**
  *   1. Read `code` from the URL
- *   2. `supabase.auth.exchangeCodeForSession(code)` \u2014 sets the session
+ *   2. `supabase.auth.exchangeCodeForSession(code)` — sets the session
  *      cookies (via the cookie methods we configured in
  *      `lib/supabase/server.ts`)
  *   3. Read `data.user.id` and `data.user.email` from the exchange result
  *   4. INSERT scouts row with `ON CONFLICT DO NOTHING` (returning users
- *      already have a row from a prior visit \u2014 we don't want to clobber
+ *      already have a row from a prior visit — we don't want to clobber
  *      their `fullName` / `badgeStatus` / etc.)
  *   5. Redirect to `/scout/profile`
  *
  * **Open-redirect protection:** we don't honour any caller-supplied `next`
  * query param yet. All successful exchanges land on `/scout/profile`. When
- * we add deep-linking later (e.g. "redeem this coupon \u2192 sign in \u2192 back
+ * we add deep-linking later (e.g. "redeem this coupon → sign in → back
  * to coupon"), the `next` param will need explicit allow-listing to avoid
  * redirecting to attacker-controlled URLs.
  *
  * **RLS bypass for the INSERT:** Drizzle connects via the pooler service
- * URI which bypasses RLS. That's intentional here \u2014 we just exchanged the
+ * URI which bypasses RLS. That's intentional here — we just exchanged the
  * code and have a verified `auth.users.id`, and the scouts table's RLS
  * policy would allow this same user to insert their own row anyway. Going
  * through the pooler avoids initialising a per-request authed Postgres
@@ -37,16 +37,16 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  * **Error handling:** any failure bounces back to `/scout/sign-in?error=<code>`
  * with a stable, non-sensitive reason code so the form can render an inline
  * message and our error contract with the client stays predictable. Codes:
- *   - `missing_code`              \u2014 no `code` query param on the URL
- *   - `auth_exchange_failed`      \u2014 `exchangeCodeForSession` returned an error
- *   - `auth_failed`               \u2014 exchange succeeded but `user.id` or
+ *   - `missing_code`              — no `code` query param on the URL
+ *   - `auth_exchange_failed`      — `exchangeCodeForSession` returned an error
+ *   - `auth_failed`               — exchange succeeded but `user.id` or
  *                                    `user.email` was missing (shouldn't happen
  *                                    in practice, but the type allows null)
- *   - `profile_provision_failed`  \u2014 the scouts row INSERT threw (transient DB
+ *   - `profile_provision_failed`  — the scouts row INSERT threw (transient DB
  *                                    issue, etc.). Session was created so the
  *                                    user can retry.
  *
- * We intentionally do NOT echo `error.message` from Supabase into the URL \u2014
+ * We intentionally do NOT echo `error.message` from Supabase into the URL —
  * those messages aren't a stable contract and can change with library updates.
  */
 export async function GET(request: NextRequest) {
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
   // users skip the INSERT and keep their existing row state intact.
   //
   // Wrapped in try/catch so a transient DB failure (connection blip, pooler
-  // hiccup) doesn't fall through as an unhandled 500 \u2014 the session was
+  // hiccup) doesn't fall through as an unhandled 500 — the session was
   // already exchanged and the cookies are set, so the user is technically
   // authenticated. Bouncing them back to /scout/sign-in with a recoverable
   // error code lets them try again; their existing session will carry through

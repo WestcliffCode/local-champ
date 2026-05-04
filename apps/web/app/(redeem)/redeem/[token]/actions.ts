@@ -1,6 +1,6 @@
 'use server';
 
-import { and, db, eq, schema } from '@localchamp/db';
+import { and, db, eq, schema } from '@localgem/db';
 import { getCurrentScout } from '@/lib/auth/scout';
 
 /**
@@ -26,7 +26,7 @@ export async function completeRedemption(
 
   const { redemptions, coupons } = schema;
 
-  // \u2500\u2500 Fetch the redemption and verify ownership \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Fetch the redemption and verify ownership ─────────────────────────────
   const [redemption] = await db
     .select({
       id: redemptions.id,
@@ -55,7 +55,7 @@ export async function completeRedemption(
     return { success: false, error: 'Redemption has expired' };
   }
 
-  // \u2500\u2500 Check coupon's require_confirmation flag \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Check coupon's require_confirmation flag ───────────────────────────
   const [coupon] = await db
     .select({ requireConfirmation: coupons.requireConfirmation })
     .from(coupons)
@@ -69,7 +69,7 @@ export async function completeRedemption(
     };
   }
 
-  // \u2500\u2500 Mark as completed \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Mark as completed ──────────────────────────────────────────────────────────
   await db
     .update(redemptions)
     .set({
@@ -105,7 +105,7 @@ export async function updateScoutPhone(
     return { success: false, error: 'Not authenticated' };
   }
 
-  // \u2500\u2500 Validate E.164 format \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Validate E.164 format ───────────────────────────────────────────────────
   const e164Regex = /^\+[1-9]\d{6,14}$/;
   const sanitized = phone.replace(/[\s\-()]/g, '');
   if (!e164Regex.test(sanitized)) {

@@ -1,4 +1,4 @@
-// @package @localchamp/logic
+// @package @localgem/logic
 
 export * from "./scoring";
 export * from "./aeo-schemas";

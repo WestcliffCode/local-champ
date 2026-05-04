@@ -5,25 +5,25 @@ import '../globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Scout \u00b7 LocalChamp',
-    template: '%s \u00b7 LocalChamp',
+    default: 'Scout · LocalGem',
+    template: '%s · LocalGem',
   },
   description:
-    'Sign in to your LocalChamp Scout account to redeem coupons, track your badge progress, and champion local businesses.',
-  // Scout pages are auth-gated and not SEO-targeted \u2014 no value in indexing.
+    'Sign in to your LocalGem Scout account to redeem coupons, track your badge progress, and champion local businesses.',
+  // Scout pages are auth-gated and not SEO-targeted — no value in indexing.
   robots: { index: false, follow: false },
 };
 
 /**
  * Scout route group layout.
  *
- * Owns its own `<html><body>` shell (per Workflow Gotcha #8 \u2014 Payload's
+ * Owns its own `<html><body>` shell (per Workflow Gotcha #8 — Payload's
  * RootLayout renders its own document tags, so the root layout has to be
  * passthrough and each route group provides its own).
  *
  * Visually mirrors the (directory) layout: same sticky header with the
- * LocalChamp wordmark, "All cities", "Merchants", and the auth badge. The
- * scout group is dynamic (auth-aware) \u2014 every page inside reads cookies,
+ * LocalGem wordmark, "All cities", "Merchants", and the auth badge. The
+ * scout group is dynamic (auth-aware) — every page inside reads cookies,
  * either through the `<ScoutAuthBadge>` Client Component (client-side
  * fetch) or through `getCurrentScout()` (server-side, on individual
  * pages).

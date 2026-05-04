@@ -1,6 +1,6 @@
 import type { CollectionAfterChangeHook, CollectionConfig } from 'payload';
 import { revalidateTag } from 'next/cache';
-import { businessTag, directoryTag } from '@localchamp/logic';
+import { businessTag, directoryTag } from '@localgem/logic';
 
 /**
  * Resolve a Payload `relationship` field value to its underlying ID.

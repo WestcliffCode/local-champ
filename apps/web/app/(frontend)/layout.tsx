@@ -3,8 +3,8 @@ import '../globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'LocalChamp',
-    template: '%s · LocalChamp',
+    default: 'LocalGem',
+    template: '%s · LocalGem',
   },
   description:
     'Discover and champion the best local businesses in your community.',

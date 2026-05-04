@@ -6,10 +6,10 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   // Workspace packages need transpilation in Next.js
   transpilePackages: [
-    '@localchamp/ui',
-    '@localchamp/db',
-    '@localchamp/logic',
-    '@localchamp/types',
+    '@localgem/ui',
+    '@localgem/db',
+    '@localgem/logic',
+    '@localgem/types',
   ],
 };
 

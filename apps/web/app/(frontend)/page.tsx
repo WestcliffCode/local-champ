@@ -1,22 +1,22 @@
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 
-import { CityCard } from '@localchamp/ui';
-import { stringifyJsonLd, websiteJsonLd } from '@localchamp/logic';
+import { CityCard } from '@localgem/ui';
+import { stringifyJsonLd, websiteJsonLd } from '@localgem/logic';
 
 import { getCities } from '@/lib/queries';
 
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-champ.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://local-gem.vercel.app';
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'Champion the businesses that make your community',
   description:
-    'LocalChamp is a community-first directory of verified local businesses, with tap-to-redeem coupons and a Scout Badge program that rewards you for showing up.',
+    'LocalGem is a community-first directory of verified local businesses, with tap-to-redeem coupons and a Scout Badge program that rewards you for showing up.',
   openGraph: {
-    title: 'LocalChamp — Champion your community',
+    title: 'LocalGem — Champion your community',
     description:
       'A community-first directory of verified local businesses. Discover, claim, and reward the businesses that make your neighborhood worth living in.',
     url: SITE_URL,
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const cities = await getCities();
   const websiteSchema = websiteJsonLd({
-    siteName: 'LocalChamp',
+    siteName: 'LocalGem',
     siteUrl: SITE_URL,
     description:
       'A community-first directory of verified local businesses, with tap-to-redeem coupons and Scout Badge gamification.',
@@ -45,7 +45,7 @@ export default async function HomePage() {
       <section className="px-6 pb-16 pt-20 sm:pb-20 sm:pt-28">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-forest-green">
-            LocalChamp
+            LocalGem
           </p>
           <h1 className="mt-5 text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
             Champion your community.

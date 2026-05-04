@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import type { Route } from 'next';
-import { db, eq, schema } from '@localchamp/db';
-import { verifyRedemptionToken } from '@localchamp/logic/redemption-token';
+import { db, eq, schema } from '@localgem/db';
+import { verifyRedemptionToken } from '@localgem/logic/redemption-token';
 import { getCurrentScout } from '@/lib/auth/scout';
 import { RedemptionCountdown } from './countdown';
 
 /**
- * `/redeem/[token]` \u2014 countdown page.
+ * `/redeem/[token]` — countdown page.
  *
  * Server Component that:
  *   1. Verifies the HMAC-signed token
@@ -25,7 +25,7 @@ interface PageProps {
 export default async function RedeemTokenPage({ params }: PageProps) {
   const { token } = await params;
 
-  // \u2500\u2500 Verify token (signature only \u2014 ignore expiry for now) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Verify token (signature only — ignore expiry for now) ──────────────
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
 
@@ -44,7 +44,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // \u2500\u2500 Query redemption row by token (before expiry check) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Query redemption row by token (before expiry check) ────────────────
   // This lets us get couponId regardless of whether the token is expired.
   const { redemptions, coupons, businesses, scouts } = schema;
   const [redemption] = await db
@@ -101,7 +101,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // \u2500\u2500 Fetch coupon + business details \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Fetch coupon + business details ────────────────────────────────
   const [coupon] = await db
     .select({
       id: coupons.id,
@@ -139,7 +139,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
 
   const autoComplete = !(coupon.requireConfirmation ?? false);
 
-  // \u2500\u2500 Phone nudge: check if the scout has a phone on file \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // ── Phone nudge: check if the scout has a phone on file ────────────────
   // getCurrentScout() returns the Supabase auth user mapped to the scouts
   // table but the CurrentScout type doesn't include `phone`. Query the
   // scouts table directly using the scoutId from the redemption row.

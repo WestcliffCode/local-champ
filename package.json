@@ -1,8 +1,8 @@
 {
-  "name": "localchamp",
+  "name": "localgem",
   "private": true,
   "version": "0.0.1",
-  "description": "LocalChamp \u2013 community-first local business directory",
+  "description": "LocalGem – community-first local business directory",
   "scripts": {
     "prepare": "node .husky/install.mjs",
     "build": "turbo run build",

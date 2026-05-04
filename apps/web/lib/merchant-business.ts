@@ -1,5 +1,5 @@
 import config from '@payload-config';
-import { db, eq, schema } from '@localchamp/db';
+import { db, eq, schema } from '@localgem/db';
 import { getPayload } from 'payload';
 
 import type { User } from '@/payload-types';

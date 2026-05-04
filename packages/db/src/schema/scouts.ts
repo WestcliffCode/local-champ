@@ -2,7 +2,7 @@ import { pgTable, uuid, text, timestamp, index } from 'drizzle-orm/pg-core';
 import { scoutBadgeEnum } from './enums';
 
 /**
- * Scouts — the canonical consumer profile entity for LocalChamp.
+ * Scouts — the canonical consumer profile entity for LocalGem.
  *
  * One row per Supabase Auth user (linked via `auth_user_id` → `auth.users.id`).
  * RLS: scouts can read/update their own row. Service role bypasses RLS for

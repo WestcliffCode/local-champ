@@ -131,7 +131,7 @@ export async function claimBusinessAction(
   const phoneOwner = await findUserByVerifiedPhone(business.phone, user.id);
   if (phoneOwner) {
     return errorAtCurrentStage(
-      'This phone number is already linked to another LocalChamp account. If you believe this is in error, contact support.',
+      'This phone number is already linked to another LocalGem account. If you believe this is in error, contact support.',
     );
   }
 
@@ -163,7 +163,7 @@ export async function claimBusinessAction(
     // the beforeValidate hook was added to the Businesses collection.
     if (!/^\+[1-9]\d{6,14}$/.test(business.phone)) {
       return errorAtCurrentStage(
-        'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
+        'The phone number on file is not in a valid format. Please contact hello@localgem.com.',
       );
     }
 
@@ -203,7 +203,7 @@ export async function claimBusinessAction(
     // the beforeValidate hook was added to the Businesses collection.
     if (!/^\+[1-9]\d{6,14}$/.test(business.phone)) {
       return errorAtCurrentStage(
-        'The phone number on file is not in a valid format. Please contact hello@localchamp.com.',
+        'The phone number on file is not in a valid format. Please contact hello@localgem.com.',
       );
     }
 
@@ -259,7 +259,7 @@ export async function claimBusinessAction(
         return {
           stage: 'confirm',
           error:
-            'This phone number is already linked to another LocalChamp account. If you believe this is in error, contact support.',
+            'This phone number is already linked to another LocalGem account. If you believe this is in error, contact support.',
         };
       }
       if (isUniqueViolation && /business_id/i.test(message)) {

@@ -7,7 +7,7 @@ import { getCurrentScout } from '@/lib/auth/scout';
 export const metadata: Metadata = {
   title: 'Create your Scout account',
   description:
-    'Join LocalChamp as a Scout \u2014 discover, redeem, and champion the businesses that make your community.',
+    'Join LocalGem as a Scout — discover, redeem, and champion the businesses that make your community.',
 };
 
 export default async function SignUpPage() {
@@ -21,7 +21,7 @@ export default async function SignUpPage() {
     <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-md flex-col justify-center px-6 py-12">
       <div className="space-y-2 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Become a LocalChamp scout.
+          Become a LocalGem scout.
         </h1>
         <p className="text-base text-muted-foreground">
           Champion the businesses that make your community. Redeem coupons,
