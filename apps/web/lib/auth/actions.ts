@@ -33,6 +33,12 @@ export type SignInState =
  * local dev. Falls back to `host` + `https` if `origin` is missing (some
  * proxies strip it).
  *
+ * **Phone metadata (PR #28):** when the sign-up form includes an optional
+ * phone number, we pass it through `options.data` which Supabase stores as
+ * `user_metadata`. The auth callback reads it back and writes it to the
+ * `scouts.phone` column during profile provisioning. This avoids extra
+ * storage or cookies to bridge the async magic-link gap.
+ *
  * **Error handling:** Supabase returns descriptive errors for invalid email,
  * rate-limiting, etc. We surface the raw `error.message` to the user. Not a
  * security issue — these errors don't leak whether an account exists (magic
@@ -52,7 +58,22 @@ export async function signInWithMagicLink(
   // Lightweight format check — Supabase will validate more thoroughly, but a
   // quick guard avoids round-tripping for obvious typos.
   if (!email.includes('@') || !email.includes('.')) {
-    return { status: 'error', message: 'That doesn\u2019t look like a valid email address.' };
+    return { status: 'error', message: 'That doesn’t look like a valid email address.' };
+  }
+
+  // ── Optional phone from sign-up form ──────────────────────────────────
+  // Sanitize to digits and leading `+` only. If the result isn't plausibly
+  // E.164, we silently drop it rather than blocking sign-up — the phone is
+  // optional and can be added later via the redemption nudge or profile.
+  const rawPhone = formData.get('phone');
+  let phone: string | undefined;
+  if (typeof rawPhone === 'string' && rawPhone.trim()) {
+    const sanitized = rawPhone.replace(/[\s\-()]/g, '');
+    const e164Regex = /^\+[1-9]\d{6,14}$/;
+    if (e164Regex.test(sanitized)) {
+      phone = sanitized;
+    }
+    // Invalid format → silently ignored (don't block account creation)
   }
 
   const headerList = await headers();
@@ -76,6 +97,9 @@ export async function signInWithMagicLink(
     email,
     options: {
       emailRedirectTo: `${origin}/scout/auth/callback`,
+      // Store phone in user_metadata so the auth callback can read it
+      // back and persist to scouts.phone during profile provisioning.
+      ...(phone ? { data: { phone } } : {}),
     },
   });
 
@@ -95,7 +119,7 @@ export async function signInWithMagicLink(
  * Location header and lands on `/`.
  *
  * Even if `signOut()` errors (e.g. Supabase API down), we still redirect home
- * \u2014 the local cookies are cleared by `@supabase/ssr` regardless, and the
+ * — the local cookies are cleared by `@supabase/ssr` regardless, and the
  * proxy's next-request refresh will reconcile the state.
  */
 export async function signOut() {
