@@ -61,18 +61,37 @@ loadEnvConfig(dirname, true);
  * mode would auto-mutate schema based on local code, which is unsafe on shared DBs.
  */
 
-// Fail fast on missing critical env vars. For local dev, populate `.env.local`
-// from `.env.example`. For CI / `payload migrate:create` / `payload generate:*`,
-// any non-empty placeholder satisfies the check (those commands don't connect).
+// ── Build-safe env var resolution ────────────────────────────────────────
+//
+// During `next build`, withPayload() evaluates this config to generate the
+// Payload admin bundle and import map. No DB connections or crypto operations
+// happen at build time, so placeholder values are safe.
+//
+// At runtime (`next dev` / `next start`), real values are required — the
+// fail-fast checks below throw immediately if they're missing.
+//
+// This allows `pnpm build` to succeed on CI or a fresh checkout without
+// `.env.local`, while keeping strict validation during development and
+// production.
+
+// NOTE: NEXT_PHASE is an internal / undocumented Next.js env var set during
+// `next build` (value: 'phase-production-build'). It has been stable since
+// Next.js ~v12 and is widely relied upon in the ecosystem, but it is NOT
+// part of the public API and could change in a future major version. If this
+// detection breaks after a Next.js upgrade, replace with a custom env var
+// (e.g. SKIP_ENV_VALIDATION=1 set in a build script) or treat the absence
+// of both PAYLOAD_SECRET and DATABASE_URL as a proxy for build mode.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
 const PAYLOAD_SECRET = process.env.PAYLOAD_SECRET;
-if (!PAYLOAD_SECRET) {
+if (!PAYLOAD_SECRET && !isBuildPhase) {
   throw new Error(
     'PAYLOAD_SECRET is not set. Generate one with `openssl rand -hex 32` and add it to .env.local (development) or your hosting provider env vars (production).',
   );
 }
 
 const DATABASE_URL = process.env.DATABASE_URL;
-if (!DATABASE_URL) {
+if (!DATABASE_URL && !isBuildPhase) {
   throw new Error(
     'DATABASE_URL is not set. Use the Supabase pooler "Session" URI from Settings → Database → Connection string.',
   );
@@ -90,13 +109,13 @@ export default buildConfig({
   },
   collections: [Businesses, Coupons, Users],
   editor: lexicalEditor(),
-  secret: PAYLOAD_SECRET,
+  secret: PAYLOAD_SECRET || 'build-placeholder-not-for-runtime',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
     pool: {
-      connectionString: DATABASE_URL,
+      connectionString: DATABASE_URL || 'postgresql://build-placeholder:5432/placeholder',
     },
     push: false,
     // UUID primary keys across all Payload collections — matches PRD spec
