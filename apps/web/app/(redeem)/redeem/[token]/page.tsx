@@ -28,6 +28,10 @@ export default async function RedeemTokenPage({ params }: PageProps) {
   // ── Verify token (signature only — ignore expiry for now) ──────────────
   const secret = process.env.PAYLOAD_SECRET;
   if (!secret) {
+    console.error(
+      '[LocalGem] PAYLOAD_SECRET is not configured — cannot verify redemption tokens',
+      { route: '/redeem/[token]', NODE_ENV: process.env.NODE_ENV },
+    );
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center">

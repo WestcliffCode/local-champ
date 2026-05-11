@@ -74,6 +74,13 @@ loadEnvConfig(dirname, true);
 // `.env.local`, while keeping strict validation during development and
 // production.
 
+// NOTE: NEXT_PHASE is an internal / undocumented Next.js env var set during
+// `next build` (value: 'phase-production-build'). It has been stable since
+// Next.js ~v12 and is widely relied upon in the ecosystem, but it is NOT
+// part of the public API and could change in a future major version. If this
+// detection breaks after a Next.js upgrade, replace with a custom env var
+// (e.g. SKIP_ENV_VALIDATION=1 set in a build script) or treat the absence
+// of both PAYLOAD_SECRET and DATABASE_URL as a proxy for build mode.
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
 
 const PAYLOAD_SECRET = process.env.PAYLOAD_SECRET;
