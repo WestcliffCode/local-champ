@@ -27,7 +27,18 @@ export default async function RedeemTokenPage({ params }: PageProps) {
 
   // ── Verify token (signature only — ignore expiry for now) ──────────────
   const secret = process.env.PAYLOAD_SECRET;
-  if (!secret) throw new Error('PAYLOAD_SECRET is not configured');
+  if (!secret) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground">Configuration error</h1>
+          <p className="mt-2 text-muted-foreground">
+            PAYLOAD_SECRET is not configured. Please contact support if this issue persists.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   const result = verifyRedemptionToken(token, secret);
 
@@ -44,7 +55,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // ── Query redemption row by token (before expiry check) ────────────────
+  // ── Query redemption row by token (before expiry check) ────────────────────
   // This lets us get couponId regardless of whether the token is expired.
   const { redemptions, coupons, businesses, scouts } = schema;
   const [redemption] = await db
@@ -101,7 +112,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
     );
   }
 
-  // ── Fetch coupon + business details ────────────────────────────────
+  // ── Fetch coupon + business details ────────────────────────────────────────
   const [coupon] = await db
     .select({
       id: coupons.id,
@@ -139,7 +150,7 @@ export default async function RedeemTokenPage({ params }: PageProps) {
 
   const autoComplete = !(coupon.requireConfirmation ?? false);
 
-  // ── Phone nudge: check if the scout has a phone on file ────────────────
+  // ── Phone nudge: check if the scout has a phone on file ────────────────────
   // getCurrentScout() returns the Supabase auth user mapped to the scouts
   // table but the CurrentScout type doesn't include `phone`. Query the
   // scouts table directly using the scoutId from the redemption row.
