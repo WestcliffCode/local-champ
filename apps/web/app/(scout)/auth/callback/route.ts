@@ -21,6 +21,14 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  *      their `fullName` / `badgeStatus` / etc.)
  *   5. Redirect to `/scout/profile`
  *
+ * **Phone from sign-up (PR #28):** when the sign-up form includes an
+ * optional phone number, it's stored in Supabase `user_metadata.phone` via
+ * `signInWithOtp({ data: { phone } })`. We read it here and include it in
+ * the scouts INSERT. ON CONFLICT DO NOTHING means returning users who
+ * already have a row won't get their phone overwritten — only first-time
+ * sign-ups benefit. This is intentional: if a returning user wants to
+ * change their phone, they do it via the profile or redemption nudge.
+ *
  * **Open-redirect protection:** we don't honour any caller-supplied `next`
  * query param yet. All successful exchanges land on `/scout/profile`. When
  * we add deep-linking later (e.g. "redeem this coupon → sign in → back
@@ -39,12 +47,12 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
  * message and our error contract with the client stays predictable. Codes:
  *   - `missing_code`              — no `code` query param on the URL
  *   - `auth_exchange_failed`      — `exchangeCodeForSession` returned an error
- *   - `auth_failed`               — exchange succeeded but `user.id` or
- *                                    `user.email` was missing (shouldn't happen
- *                                    in practice, but the type allows null)
+ *   - `auth_failed`                — exchange succeeded but `user.id` or
+ *                                      `user.email` was missing (shouldn't happen
+ *                                      in practice, but the type allows null)
  *   - `profile_provision_failed`  — the scouts row INSERT threw (transient DB
- *                                    issue, etc.). Session was created so the
- *                                    user can retry.
+ *                                   issue, etc.). Session was created so the
+ *                                   user can retry.
  *
  * We intentionally do NOT echo `error.message` from Supabase into the URL —
  * those messages aren't a stable contract and can change with library updates.
@@ -69,6 +77,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // ── Read optional phone from user_metadata ────────────────────────────
+  // Set during sign-up via `signInWithOtp({ data: { phone } })`. May be
+  // undefined for sign-ins or sign-ups where the user skipped the field.
+  const metaPhone =
+    typeof data.user.user_metadata?.phone === 'string'
+      ? data.user.user_metadata.phone
+      : undefined;
+
   // Provision the scouts row on first sign-in. ON CONFLICT DO NOTHING is
   // keyed on `auth_user_id` (which is UNIQUE in the schema). Returning
   // users skip the INSERT and keep their existing row state intact.
@@ -85,6 +101,7 @@ export async function GET(request: NextRequest) {
       .values({
         authUserId: data.user.id,
         email: data.user.email,
+        ...(metaPhone ? { phone: metaPhone } : {}),
       })
       .onConflictDoNothing({ target: schema.scouts.authUserId });
   } catch {

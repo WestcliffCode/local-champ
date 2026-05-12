@@ -11,6 +11,11 @@ export interface ScoutAuthFormProps {
    * Drives copy. Functionally `sign-in` and `sign-up` are identical —
    * Supabase's `signInWithOtp` auto-creates the user if they don't exist.
    * The mode just changes button label and confirmation copy.
+   *
+   * In `sign-up` mode, an optional phone field is shown so scouts can
+   * provide their number upfront instead of waiting for the redemption
+   * nudge. The phone is passed through Supabase user metadata and
+   * persisted to the `scouts.phone` column during the auth callback.
    */
   mode: 'sign-in' | 'sign-up';
 }
@@ -20,9 +25,9 @@ export interface ScoutAuthFormProps {
  *
  * **Three render states**, driven by the Server Action's return value
  * (`SignInState`):
- *   - `idle`     — show the email input + submit button
- *   - `sent`     — show "Check your email" confirmation
- *   - `error`    — show the email input + an inline error message
+ *   - `idle`      — show the email input + submit button
+ *   - `sent`      — show "Check your email" confirmation
+ *   - `error`     — show the email input + an inline error message
  *
  * **Why a Client Component:** `useActionState` is a client-only hook. The
  * page wrapper around this form is a Server Component that renders
@@ -60,7 +65,7 @@ export function ScoutAuthForm({ mode }: ScoutAuthFormProps) {
             : ' Click it to sign in.'}
         </p>
         <p className="mt-4 text-xs text-muted-foreground">
-          The link expires in an hour. Didn’t get it? Check spam, or refresh
+          The link expires in an hour. Didn&apos;t get it? Check spam, or refresh
           this page to send another.
         </p>
       </div>
@@ -93,6 +98,28 @@ export function ScoutAuthForm({ mode }: ScoutAuthFormProps) {
           aria-invalid={state.status === 'error'}
         />
       </div>
+      {mode === 'sign-up' && (
+        <div className="space-y-2">
+          <label
+            htmlFor="phone"
+            className="text-sm font-medium leading-none text-foreground"
+          >
+            Phone number{' '}
+            <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            placeholder="+1 555 123 4567"
+            aria-describedby="phone-hint"
+          />
+          <p id="phone-hint" className="text-xs text-muted-foreground">
+            Used for faster coupon redemptions. You can add this later.
+          </p>
+        </div>
+      )}
       {state.status === 'error' && (
         <p
           id="email-error"
