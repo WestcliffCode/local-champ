@@ -116,6 +116,7 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: DATABASE_URL || 'postgresql://build-placeholder:5432/placeholder',
+      max: 3,
     },
     push: false,
     // UUID primary keys across all Payload collections — matches PRD spec
