@@ -25,9 +25,9 @@ export function DirectoryHeader({ authBadge }: DirectoryHeaderProps) {
           <Link href="/for-merchants" className="transition-colors hover:text-diamond">
             Partners
           </Link>
-          <a href="/admin" className="transition-colors hover:text-diamond">
+          <Link href="/admin" className="transition-colors hover:text-diamond">
             Dashboard
-          </a>
+          </Link>
           {authBadge}
         </nav>
       </div>

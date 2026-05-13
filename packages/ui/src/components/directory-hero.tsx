@@ -58,6 +58,7 @@ export function DirectoryHero({
                 type="search"
                 placeholder={searchPlaceholder}
                 defaultValue={searchDefaultValue}
+                aria-label="Search the directory"
                 className="h-11 pl-9 text-base bg-surface-container border border-outline-variant rounded-lg"
               />
             </div>
