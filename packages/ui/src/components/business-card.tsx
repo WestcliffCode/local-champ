@@ -6,11 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { ScoreBadge } from './score-badge';
 
-/**
- * Minimal data shape for rendering a business card. Mirrors a subset of the
- * Drizzle `businesses` schema; intentionally flexible so callers can pass
- * either Drizzle rows or hand-shaped objects.
- */
 export type BusinessCardBusiness = {
   name: string;
   slug: string;
@@ -25,18 +20,9 @@ export type BusinessCardBusiness = {
 export interface BusinessCardProps
   extends React.HTMLAttributes<HTMLDivElement> {
   business: BusinessCardBusiness;
-  /** When true, hides score badges (useful in compact lists). */
   compact?: boolean;
 }
 
-/**
- * BusinessCard renders the visual representation of a business in directory
- * listings. It does NOT wrap with a Link — callers compose with their
- * router's link primitive (e.g. `<Link href={...}><BusinessCard /></Link>`).
- *
- * The hover style (shadow + border tint) applies regardless of wrapping so
- * the card feels interactive even when stacked with a Link.
- */
 export function BusinessCard({
   business,
   compact = false,
@@ -54,7 +40,7 @@ export function BusinessCard({
   return (
     <Card
       className={cn(
-        'h-full transition-shadow hover:shadow-md hover:border-foreground/20',
+        'h-full transition-all hover:glow-diamond hover:border-diamond/20',
         className,
       )}
       {...props}
@@ -67,7 +53,7 @@ export function BusinessCard({
           </Badge>
           {rating != null && (
             <span className="inline-flex items-center gap-1">
-              <Star className="h-3 w-3 fill-current" aria-hidden />
+              <Star className="h-3 w-3 fill-diamond text-diamond" aria-hidden />
               <span className="font-medium text-foreground">
                 {rating.toFixed(1)}
               </span>

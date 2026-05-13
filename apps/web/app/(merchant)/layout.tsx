@@ -2,10 +2,23 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { Space_Grotesk, Manrope } from 'next/font/google';
 
 import { getCurrentMerchant } from '@/lib/auth/merchant';
 
 import '../globals.css';
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -61,27 +74,27 @@ export default async function MerchantLayout({
   }
 
   return (
-    <html lang="en">
+    <html lang="en" className={`${spaceGrotesk.variable} ${manrope.variable}`}>
       <body className="antialiased">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+        <header className="sticky top-0 z-40 border-b border-outline-variant/50 glass-heavy">
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
             <div className="flex items-center gap-6">
               <Link
                 href="/admin"
-                className="text-base font-semibold tracking-tight text-foreground hover:text-forest-green"
+                className="font-display text-base font-bold tracking-tight text-foreground hover:text-diamond transition-colors"
               >
                 LocalGem Merchant
               </Link>
               <nav className="flex items-center gap-4">
                 <Link
                   href="/claim"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="text-sm text-muted-foreground transition-colors hover:text-diamond"
                 >
                   Claim
                 </Link>
                 <Link
                   href="/merchant/redemptions"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="text-sm text-muted-foreground transition-colors hover:text-diamond"
                 >
                   Redemptions
                 </Link>

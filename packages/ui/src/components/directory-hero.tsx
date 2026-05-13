@@ -9,19 +9,11 @@ export interface DirectoryHeroProps
   extends Omit<React.HTMLAttributes<HTMLElement>, 'title'> {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
-  /** When provided, renders a search form that submits GET to this URL with `q` as query param. */
   searchAction?: string;
   searchPlaceholder?: string;
   searchDefaultValue?: string;
 }
 
-/**
- * DirectoryHero is the top-of-page section for both city landing pages and
- * city-scoped search results. The optional search form uses a plain
- * `method="get"` submission — the browser navigates to
- * `${searchAction}?q=${value}` without JavaScript, which keeps the page
- * server-renderable and progressively enhances on the client.
- */
 export function DirectoryHero({
   title,
   subtitle,
@@ -35,17 +27,17 @@ export function DirectoryHero({
   return (
     <section
       className={cn(
-        'border-b border-border bg-gradient-to-b from-background to-muted/30 px-6 py-12 sm:py-16 md:py-20',
+        'border-b border-border surface-hero px-6 py-12 sm:py-16 md:py-20',
         className,
       )}
       {...props}
     >
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+        <h1 className="text-display-lg text-foreground sm:text-4xl md:text-5xl">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+          <p className="mt-4 text-body-base text-muted-foreground sm:text-lg">
             {subtitle}
           </p>
         )}
@@ -66,8 +58,7 @@ export function DirectoryHero({
                 type="search"
                 placeholder={searchPlaceholder}
                 defaultValue={searchDefaultValue}
-                className="h-11 pl-9 text-base"
-                aria-label="Search the directory"
+                className="h-11 pl-9 text-base bg-surface-container border border-outline-variant rounded-lg"
               />
             </div>
             <Button type="submit" size="lg">
