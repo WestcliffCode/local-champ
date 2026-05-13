@@ -35,7 +35,7 @@ function getDb(): ReturnType<typeof drizzle<typeof schema>> {
 
     const queryClient = postgres(connectionString, {
       prepare: false,
-      max: 10,
+      max: 3,
     });
 
     _db = drizzle(queryClient, { schema });

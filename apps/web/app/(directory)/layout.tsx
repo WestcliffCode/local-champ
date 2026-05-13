@@ -1,7 +1,20 @@
 import type { Metadata } from 'next';
+import { Space_Grotesk, Manrope } from 'next/font/google';
 import { DirectoryHeader } from '@/components/directory-header';
 import { ScoutAuthBadge } from '@/components/scout-auth-badge';
 import '../globals.css';
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +48,7 @@ export default function DirectoryLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${spaceGrotesk.variable} ${manrope.variable}`}>
       <body className="antialiased">
         <DirectoryHeader authBadge={<ScoutAuthBadge />} />
         <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>
